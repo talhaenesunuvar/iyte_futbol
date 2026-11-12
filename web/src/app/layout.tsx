@@ -22,6 +22,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: SITE_BASLIK, template: `%s · ${SITE_AD}` },
   description: SITE_ACIKLAMA,
+  alternates: { canonical: "/" },
   openGraph: { ...OG_BASE, title: SITE_BASLIK, description: SITE_ACIKLAMA, url: "/" },
   twitter: { card: "summary_large_image" },
   // Onizleme suresince arama motorlarina kapali; alan adinda SITE_INDEXABLE=true ile acilir

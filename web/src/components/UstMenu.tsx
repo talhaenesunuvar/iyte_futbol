@@ -19,7 +19,7 @@ export default function UstMenu() {
     <>
       <div ref={isaret} aria-hidden style={{ position: "absolute", top: 0, height: 60, width: 1, pointerEvents: "none" }} />
       <header className={"ust" + (dolu ? " dolu" : "") + (acik ? " acik" : "")}>
-        {/* Logo secim sayfasina doner; iki tasarim telefonda da karsilastirilabilsin. Kazanan /'a tasininca ayni kalir. */}
+        {/* Logo ana sayfaya (Kale Agi) doner. */}
         <Link className="ust-m" href="/">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/img/logo-bas.webp" alt="" width={34} height={37} />

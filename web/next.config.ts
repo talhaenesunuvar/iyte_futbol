@@ -40,6 +40,10 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  // Kale Agi ana sayfaya tasindi; eski adres kalici yonlendirme ile gelir.
+  async redirects() {
+    return [{ source: "/kale-agi", destination: "/", permanent: true }];
+  },
   async headers() {
     return [{ source: "/:path*", headers: guvenlik }];
   },
