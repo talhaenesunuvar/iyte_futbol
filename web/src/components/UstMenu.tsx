@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { MENU, gorunurken } from "@/lib/ortak";
+import { BOLUMLU, MENU, gorunurken } from "@/lib/ortak";
 
 // Sabit ust menu. Sayfa 60 px kayinca "dolu" olur; mobilde Menu dugmesi paneli acar.
 export default function UstMenu() {
   const [acik, setAcik] = useState(false);
   const [dolu, setDolu] = useState(false);
   const isaret = useRef<HTMLDivElement>(null);
+  const yol = usePathname();
+  const bolumlu = BOLUMLU.has(yol);
 
   useEffect(() => {
     const io = gorunurken(isaret.current!, (g) => setDolu(!g));
@@ -26,9 +29,17 @@ export default function UstMenu() {
           <span>İYTE Futbol</span>
         </Link>
         <nav aria-label="Ana menü">
-          {MENU.map(([ad, h], i) => (
-            <a key={h} href={h} aria-current={i ? undefined : "page"} onClick={() => setAcik(false)}>{ad}</a>
-          ))}
+          {MENU.map(([ad, h]) => {
+            const kapat = () => setAcik(false);
+            const hashli = h.includes("#");
+            // Bolumlu sayfada "/" ve "/#x" sayfa ici "#"/"#x" olur (AkiciKaydirma yumusak kaydirir); baska sayfada oldugu gibi gider.
+            if (bolumlu && (hashli || h === "/")) {
+              const sayfaIci = hashli ? h.slice(h.indexOf("#")) : "#";
+              return <a key={h} href={sayfaIci} aria-current={h === "/" ? "page" : undefined} onClick={kapat}>{ad}</a>;
+            }
+            if (hashli) return <a key={h} href={h} onClick={kapat}>{ad}</a>;
+            return <Link key={h} href={h} aria-current={yol === h ? "page" : undefined} onClick={kapat}>{ad}</Link>;
+          })}
         </nav>
         <button type="button" aria-expanded={acik} onClick={() => setAcik((a) => !a)}>{acik ? "Kapat" : "Menü"}</button>
       </header>

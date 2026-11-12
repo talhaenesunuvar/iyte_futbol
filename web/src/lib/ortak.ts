@@ -1,12 +1,16 @@
 // Ortak yardimcilar: ornek veri, menu, sinir/ara, gorunurluk, 3B top cizimi.
 // Prototipteki tasarimlar/ortak/ortak.js'in TypeScript karsiligi.
 
+// Menu. # bolumleri ana sayfada; BOLUMLU sayfalarda sayfa ici baglanti (yumusak kaydirma), digerlerinde "/#..." ile ana sayfaya gider.
 export const MENU: [string, string][] = [
-  ["Ana Sayfa", "#"],
-  ["Hakkımızda", "#hakkimizda"],
-  ["Etkinliklerimiz", "#etkinlikler"],
-  ["İletişim", "#iletisim"],
+  ["Ana Sayfa", "/"],
+  ["Hakkımızda", "/#hakkimizda"],
+  ["Etkinliklerimiz", "/#etkinlikler"],
+  ["İletişim", "/#iletisim"],
+  ["Köy Sahası", "/koy-sahasi"],
 ];
+// Hakkimizda/Etkinlikler/Iletisim bolumlerini iceren sayfalar (Kale Agi = /, Skorbord)
+export const BOLUMLU = new Set(["/", "/skorbord"]);
 
 export type Olay = { gun: string; ay: string; kisa: string; hafta: string; ad: string; ust: string; tur: string; yer: string; saat: string };
 
