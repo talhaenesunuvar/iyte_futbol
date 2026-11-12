@@ -1,69 +1,20 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import Link from "next/link";
 
+// Gecici giris: tasarim secilene kadar iki aday da kendi adresinde yasar.
+// Secim yapilinca kazanan tasarim buraya (/) tasinir.
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.tsx</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="kap" style={{ minHeight: "100dvh", display: "grid", alignContent: "center", gap: 28, paddingBlock: 48 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/img/logo-bas.webp" alt="" width={48} height={52} />
+        <h1 style={{ fontSize: "clamp(32px,5vw,56px)" }}>İYTE Futbol</h1>
+      </div>
+      <p style={{ maxWidth: "48ch" }}>Ana sayfa için iki aday tasarım. Seçim yapılınca kazanan tasarım bu adrese taşınacak. Telefonda dokunarak dene; sol üstteki logo bu sayfaya döndürür.</p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+        <Link className="btn" href="/kale-agi">Kale Ağı</Link>
+        <Link className="btn iki" href="/skorbord">Skorbord</Link>
+      </div>
+    </main>
   );
 }

@@ -1,0 +1,61 @@
+/* Skorbord tasarımı. Global CSS sayfa değişince kaldırılmadığı için her kural .t-skor altında. */
+.t-skor {
+  --f-g: var(--font-barlow), system-ui, sans-serif;
+  --f-b: var(--font-barlow-c), sans-serif;
+  --panel: #262626;
+  padding-bottom: calc(92px + env(safe-area-inset-bottom));
+
+  .pano{background:var(--karbon);color:var(--beyaz);padding:clamp(16px,2.4vw,32px);border-radius:var(--k-l)}
+  .sat{display:flex;flex-wrap:nowrap;gap:calc(var(--w)*.08)}
+  .sat+.sat{margin-top:calc(var(--w)*.16)}
+  .f{position:relative;flex:none;width:var(--w);height:calc(var(--w)*1.46);perspective:calc(var(--w)*6);font:600 calc(var(--w)*1.2)/calc(var(--w)*1.46) var(--f-b);color:var(--beyaz);text-align:center;border-radius:calc(var(--w)*.1)}
+  .f s{position:absolute;left:0;right:0;height:50%;overflow:hidden;text-decoration:none;background:var(--panel);backface-visibility:hidden}
+  .f .u,.f .fu{top:0;transform-origin:50% 100%;border-radius:calc(var(--w)*.1) calc(var(--w)*.1) 0 0}
+  .f .a,.f .fa{bottom:0;transform-origin:50% 0;border-radius:0 0 calc(var(--w)*.1) calc(var(--w)*.1)}
+  .f i{display:block;height:200%;font-style:normal}
+  .f .a i,.f .fa i{transform:translateY(-50%)}
+  .f .a,.f .fa{box-shadow:inset 0 1px 0 rgba(0,0,0,.65)}
+  .f .fu,.f .fa{visibility:hidden;will-change:transform}
+  .b .f s{background:var(--bordo)}
+
+  /* Dokunulabilir tabela: basar basmaz cevap verir, parmak kalkinca degil */
+  .ust-pano .f{touch-action:none;cursor:grab;transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+  .ust-pano .f.bas{transform:scale(.94);transition:transform .1s ease-out;cursor:grabbing}
+
+  .ust-pano{min-height:100dvh;padding:calc(var(--nav-h) + 10px) var(--pad) 96px;display:flex;flex-direction:column;justify-content:center}
+  .ust-pano .pano{--w:min(calc((100vw - 2*var(--pad) - 72px)/16.3),74px);width:fit-content;max-width:100%;border-radius:var(--k-xl)}
+  .ust-pano p{margin:24px 0 8px;max-width:44ch;font-size:clamp(19px,1.7vw,22px);line-height:1.4}
+  .ust-pano .ipucu{margin:0 0 20px;font-size:15px;font-weight:600;letter-spacing:.01em;color:#4a4a4a}
+  .d{display:flex;flex-wrap:wrap;gap:12px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  .bol{padding-block:clamp(56px,9vw,120px)}
+  .bas-p{--w:min(calc((100vw - 2*var(--pad) - 44px)/12),48px);margin-bottom:24px;width:fit-content;max-width:100%}
+  .biz p{max-width:54ch;font-size:clamp(20px,2vw,26px);line-height:1.4;letter-spacing:-.005em}
+  .tablo{--w:min(calc((100vw - 2*var(--pad) - 40px)/17.4),34px);width:fit-content;max-width:100%}
+  .st{display:flex;flex-wrap:wrap;gap:6px calc(var(--w)*.8);padding-block:calc(var(--w)*.34);border-bottom:1px solid rgba(255,255,255,.14)}
+  .st:last-child{border-bottom:0}
+  .meta{font-size:16px;color:var(--beyaz);padding:8px 0 0;flex-basis:100%}
+  .son{background:var(--bordo);color:var(--beyaz);padding-block:clamp(64px,11vw,140px)}
+  .son .pano{--w:min(calc((100vw - 2*var(--pad) - 32px)/13.4),60px);width:fit-content;max-width:100%;margin-bottom:26px}
+
+  /* Mac saati: icerigin ustunde yuzen buzlu serit. Surukleyince sayfayi 1:1 tasir. */
+  .saat{position:fixed;left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));bottom:calc(10px + env(safe-area-inset-bottom));height:64px;z-index:40;
+    color:var(--beyaz);display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:clamp(10px,2vw,16px);padding-inline:clamp(14px,2.4vw,26px);
+    border-radius:20px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;
+    background:rgba(26,26,26,.74);-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);
+    box-shadow:0 18px 40px rgba(26,26,26,.28),inset 0 1px 0 rgba(255,255,255,.12);
+    transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+  .saat.tut{cursor:grabbing;transform:scale(1.015);transition:transform .12s ease-out}
+  .saat b{font:700 34px/1 var(--f-b);font-variant-numeric:tabular-nums;min-width:2.1em;letter-spacing:-.01em}
+  .cubuk{height:12px;display:flex;gap:3px;align-items:flex-end;overflow:hidden;border-radius:4px;transition:height .24s cubic-bezier(.2,.8,.2,1)}
+  .saat.tut .cubuk{height:20px}
+  .cubuk i{flex:1 1 0;min-width:0;height:100%;background:var(--beyaz);opacity:.18;border-radius:1px}
+  .cubuk i.on{opacity:1}
+  .cubuk i.y{background:var(--gri)}
+  .saat span{font-weight:700;white-space:nowrap;letter-spacing:.01em;display:inline-block}
+
+  @media(max-width:600px){.cubuk{gap:1px}.saat b{font-size:28px}}
+  @media (prefers-reduced-transparency:reduce){.saat{background:var(--karbon);-webkit-backdrop-filter:none;backdrop-filter:none}}
+  @media (prefers-contrast:more){.saat{background:var(--karbon);-webkit-backdrop-filter:none;backdrop-filter:none;outline:2px solid var(--beyaz)}.ust-pano .ipucu{color:var(--karbon)}}
+  @media (prefers-reduced-motion:reduce){.ust-pano .f,.ust-pano .f.bas,.saat,.saat.tut{transform:none;transition:none}}
+}
