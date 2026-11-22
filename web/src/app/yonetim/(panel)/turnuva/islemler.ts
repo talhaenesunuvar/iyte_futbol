@@ -7,15 +7,33 @@ import { yetkiGerekli } from "@/lib/yetki";
 import { bitir, metin, tamsayi } from "@/lib/islem";
 import { ETIKET } from "@/lib/ayar";
 import {
-  DURUMLAR, ELEME, ELEME_BOY, GRUP_HARF, elemeEslesme, grupFiksturu, ilerlet, puanDurumu, turnuvaPanel, yereldenIso,
+  DURUMLAR, ELEME, ELEME_BOY, GRUP_HARF, elemeEslesme, grupFiksturu, ilerlet, puanDurumu, renkGecerli, skorTazele, turnuvaPanel, yereldenIso,
   type Asama, type Durum,
 } from "@/lib/turnuva";
 
 const yol = (id: number) => `/yonetim/turnuva/${id}`;
 // Hata mesaji sayfaya ?hata= ile doner (uretimde atilan hata mesaji gizlenir)
-function geri(id: number | null, hata: string, bolum = ""): never {
-  redirect(`${id ? yol(id) : "/yonetim/turnuva"}?hata=${encodeURIComponent(hata)}${bolum ? `#${bolum}` : ""}`);
+function geri(id: number | null, hata: string, bolum = "", hedef = ""): never {
+  redirect(`${hedef || (id ? yol(id) : "/yonetim/turnuva")}?hata=${encodeURIComponent(hata)}${bolum ? `#${bolum}` : ""}`);
 }
+// Canli mac sayfasindan gelen formlar hatada oraya doner ("don" alani; yalnizca panel turnuva yollari)
+const donus = (f: FormData) => {
+  const d = String(f.get("don") ?? "");
+  return /^\/yonetim\/turnuva\/mac\/\d+$/.test(d) ? d : "";
+};
+// Logo: istemci 128 px PNG/JPEG/WebP'ye kucultup data URL gonderir. "" = degistirme, "sil" = kaldir.
+const LOGO_AZAMI = 80_000;
+function logoDegeri(f: FormData): string | null | undefined {
+  const v = String(f.get("logo") ?? "");
+  if (!v) return undefined;
+  if (v === "sil") return null;
+  if (v.length > LOGO_AZAMI || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(v)) throw new Error("Logo geçersiz ya da çok büyük.");
+  return v;
+}
+const renkDegeri = (f: FormData) => {
+  const r = metin(f, "renk", 7);
+  return renkGecerli(r) ? r.toUpperCase() : null;
+};
 const kimlik = (f: FormData, k = "id") => {
   const n = tamsayi(f, k);
   if (n === null || n <= 0) throw new Error("Geçersiz kimlik.");
@@ -85,7 +103,7 @@ export async function takimEkleAction(f: FormData) {
   const ad = metin(f, "ad", 60);
   if (ad.length < 2) geri(tid, "Takım adı gerekli.", "takimlar");
   const sql = await db();
-  const r = await sql`insert into takim (turnuva_id, ad, grup, torba) values (${tid}, ${ad}, ${grupDegeri(f)}, ${torbaDegeri(f)})
+  const r = await sql`insert into takim (turnuva_id, ad, grup, torba, renk) values (${tid}, ${ad}, ${grupDegeri(f)}, ${torbaDegeri(f)}, ${renkDegeri(f)})
     on conflict (turnuva_id, ad) do nothing returning id`;
   if (!r.length) geri(tid, "Bu adla bir takım zaten var.", "takimlar");
   bitir(ETIKET.turnuva);
@@ -97,9 +115,12 @@ export async function takimGuncelleAction(f: FormData) {
   const tid = kimlik(f, "turnuva_id");
   const ad = metin(f, "ad", 60);
   if (ad.length < 2) geri(tid, "Takım adı gerekli.", "takimlar");
+  let logo: string | null | undefined;
+  try { logo = logoDegeri(f); } catch { geri(tid, "Logo geçersiz ya da çok büyük (en fazla ~60 KB).", "takimlar"); }
   const sql = await db();
   try {
-    await sql`update takim set ad = ${ad}, grup = ${grupDegeri(f)}, torba = ${torbaDegeri(f)} where id = ${id} and turnuva_id = ${tid}`;
+    await sql`update takim set ad = ${ad}, grup = ${grupDegeri(f)}, torba = ${torbaDegeri(f)}, renk = ${renkDegeri(f)} where id = ${id} and turnuva_id = ${tid}`;
+    if (logo !== undefined) await sql`update takim set logo = ${logo} where id = ${id} and turnuva_id = ${tid}`;
   } catch {
     geri(tid, "Bu adla bir takım zaten var.", "takimlar");
   }
@@ -177,6 +198,8 @@ export async function elemeOlusturAction(f: FormData) {
   for (const a of ELEME.slice(ELEME.indexOf(es.asama) + 1)) {
     for (let s = 1; s <= ELEME_BOY[a]; s++) satir.push({ turnuva_id: tid, asama: a, sira: s, ev_id: null, dep_id: null, saha: "Kampüs sahası" });
   }
+  // Yari final varsa (ilk tur yari ya da daha erken) bos 3.luk maci; yari finalde kaybedenler buraya iner
+  if (ELEME.indexOf(es.asama) <= ELEME.indexOf("yari")) satir.push({ turnuva_id: tid, asama: "ucuncu", sira: 1, ev_id: null, dep_id: null, saha: "Kampüs sahası" });
   await sql`insert into mac ${sql(satir, "turnuva_id", "asama", "sira", "ev_id", "dep_id", "saha")}`;
   bitir(ETIKET.turnuva);
 }
@@ -211,19 +234,44 @@ export async function macKaydetAction(f: FormData) {
   bitir(ETIKET.turnuva);
 }
 
+// Gol: "kim" = "o:<oyuncuId>" (kadrodan) ya da "t:<takimId>" + serbest "oyuncu" adi.
+// "asist" = "a:<oyuncuId>" ya da "" + serbest "asist_ad". Asist golu atanla ayni takimdan olmali.
 export async function golEkleAction(f: FormData) {
   await yetkiGerekli();
   const macId = kimlik(f, "mac_id");
   const tid = kimlik(f, "turnuva_id");
-  const takimId = kimlik(f, "takim_id");
-  const oyuncu = metin(f, "oyuncu", 60);
+  const hedef = donus(f);
+  const bolum = hedef ? "" : `mac-${macId}`;
   const dk = tamsayi(f, "dakika");
   const dakika = dk !== null && dk >= 1 && dk <= 130 ? dk : null;
-  if (oyuncu.length < 2) geri(tid, "Oyuncu adı gerekli.", `mac-${macId}`);
   const sql = await db();
-  const [m] = await sql`select 1 from mac where id = ${macId} and turnuva_id = ${tid} and ${takimId} in (ev_id, dep_id)`;
-  if (!m) geri(tid, "Takım bu maçta oynamıyor.", `mac-${macId}`);
-  await sql`insert into gol (mac_id, takim_id, oyuncu, dakika) values (${macId}, ${takimId}, ${oyuncu}, ${dakika})`;
+  const [m] = await sql<{ ev_id: number | null; dep_id: number | null }[]>`select ev_id, dep_id from mac where id = ${macId} and turnuva_id = ${tid}`;
+  if (!m || m.ev_id === null || m.dep_id === null) geri(tid, "Maç bulunamadı ya da takımları belli değil.", bolum, hedef);
+  const kim = metin(f, "kim", 20);
+  let takimId: number | null = null, oyuncu = "", oyuncuId: number | null = null;
+  const om = /^o:(\d+)$/.exec(kim), tm = /^t:(\d+)$/.exec(kim);
+  if (om) {
+    const [o] = await sql<{ id: number; takim_id: number; ad: string }[]>`select id, takim_id, ad from oyuncu where id = ${Number(om[1])}`;
+    if (!o) geri(tid, "Oyuncu bulunamadı.", bolum, hedef);
+    takimId = o.takim_id; oyuncu = o.ad; oyuncuId = o.id;
+  } else {
+    takimId = tm ? Number(tm[1]) : tamsayi(f, "takim_id");
+    oyuncu = metin(f, "oyuncu", 60);
+    if (oyuncu.length < 2) geri(tid, "Golü atan oyuncuyu seç ya da adını yaz.", bolum, hedef);
+  }
+  if (takimId !== m.ev_id && takimId !== m.dep_id) geri(tid, "Takım bu maçta oynamıyor.", bolum, hedef);
+  let asist = "", asistId: number | null = null;
+  const as = metin(f, "asist", 20), am = /^a:(\d+)$/.exec(as);
+  if (am) {
+    const [o] = await sql<{ id: number; takim_id: number; ad: string }[]>`select id, takim_id, ad from oyuncu where id = ${Number(am[1])}`;
+    if (o && o.takim_id === takimId && o.id !== oyuncuId) { asist = o.ad; asistId = o.id; }
+  } else {
+    asist = metin(f, "asist_ad", 60);
+    if (asist && asist.toLocaleLowerCase("tr") === oyuncu.toLocaleLowerCase("tr")) asist = "";
+  }
+  await sql`insert into gol (mac_id, takim_id, oyuncu, oyuncu_id, asist, asist_id, dakika)
+    values (${macId}, ${takimId}, ${oyuncu}, ${oyuncuId}, ${asist}, ${asistId}, ${dakika})`;
+  await skorTazele(sql, macId);
   bitir(ETIKET.turnuva);
 }
 
@@ -232,7 +280,79 @@ export async function golSilAction(f: FormData) {
   const id = kimlik(f);
   const tid = kimlik(f, "turnuva_id");
   const sql = await db();
-  await sql`delete from gol g using mac m where g.id = ${id} and m.id = g.mac_id and m.turnuva_id = ${tid}`;
+  const r = await sql<{ mac_id: number }[]>`delete from gol g using mac m where g.id = ${id} and m.id = g.mac_id and m.turnuva_id = ${tid} returning g.mac_id`;
+  if (r[0]) await skorTazele(sql, r[0].mac_id);
+  bitir(ETIKET.turnuva);
+}
+
+// CANLI MAC: baslat (skor gollerden hesaplanir) / bitir (eleme maclarinda beraberlikte penalti gerekli, sonra kazanan ilerler)
+export async function canliAction(f: FormData) {
+  await yetkiGerekli();
+  const id = kimlik(f);
+  const tid = kimlik(f, "turnuva_id");
+  const hedef = `/yonetim/turnuva/mac/${id}`;
+  const islem = metin(f, "islem", 10);
+  const sql = await db();
+  const [m] = await sql<{ asama: Asama; ev_id: number | null; dep_id: number | null; ev_gol: number | null; dep_gol: number | null }[]>`
+    select asama, ev_id, dep_id, ev_gol, dep_gol from mac where id = ${id} and turnuva_id = ${tid}`;
+  if (!m || m.ev_id === null || m.dep_id === null) geri(tid, "Maçın iki takımı da belli olmalı.", "", hedef);
+  if (islem === "baslat") {
+    await sql`update mac set canli = true, ev_pen = null, dep_pen = null where id = ${id}`;
+    await skorTazele(sql, id);
+  } else if (islem === "bitir") {
+    let evp = skor(f, "ev_pen"), depp = skor(f, "dep_pen");
+    const ev = m.ev_gol ?? 0, dep = m.dep_gol ?? 0;
+    if (evp === null || depp === null || ev !== dep) { evp = null; depp = null; }
+    if (m.asama !== "grup" && ev === dep && (evp === null || evp === depp)) geri(tid, "Eleme maçı berabere: penaltı sonucunu gir (eşit olamaz).", "", hedef);
+    await sql`update mac set canli = false, ev_gol = ${ev}, dep_gol = ${dep}, ev_pen = ${evp}, dep_pen = ${depp} where id = ${id}`;
+    if (m.asama !== "grup") await ilerlet(sql, id);
+  }
+  bitir(ETIKET.turnuva);
+}
+
+// KADROLAR
+async function takimKontrol(tid: number, takimId: number) {
+  const sql = await db();
+  const [k] = await sql`select 1 from takim where id = ${takimId} and turnuva_id = ${tid}`;
+  return !!k;
+}
+
+export async function oyuncuEkleAction(f: FormData) {
+  await yetkiGerekli();
+  const tid = kimlik(f, "turnuva_id");
+  const takimId = kimlik(f, "takim_id");
+  const ad = metin(f, "ad", 60);
+  const no = tamsayi(f, "numara");
+  if (ad.length < 2) geri(tid, "Oyuncu adı gerekli.", `kadro-${takimId}`);
+  if (!(await takimKontrol(tid, takimId))) geri(tid, "Takım bulunamadı.", "kadrolar");
+  const sql = await db();
+  await sql`insert into oyuncu (takim_id, ad, numara) values (${takimId}, ${ad}, ${no !== null && no >= 0 && no <= 99 ? no : null})`;
+  bitir(ETIKET.turnuva);
+}
+
+// Toplu: her satir "10 Ahmet Yilmaz" ya da "Ahmet Yilmaz"; en fazla 40 satir
+export async function kadroTopluAction(f: FormData) {
+  await yetkiGerekli();
+  const tid = kimlik(f, "turnuva_id");
+  const takimId = kimlik(f, "takim_id");
+  if (!(await takimKontrol(tid, takimId))) geri(tid, "Takım bulunamadı.", "kadrolar");
+  const satirlar = metin(f, "liste", 4000).split(/\r?\n/).map((x) => x.trim()).filter(Boolean).slice(0, 40);
+  const yeni = satirlar.map((x) => {
+    const m = /^(\d{1,2})\s*[.)\-–:]?\s+(.+)$/.exec(x);
+    return { takim_id: takimId, numara: m ? Number(m[1]) : null, ad: (m ? m[2] : x).slice(0, 60) };
+  }).filter((o) => o.ad.length >= 2);
+  if (!yeni.length) geri(tid, "Listede oyuncu bulunamadı. Her satıra bir oyuncu yaz.", `kadro-${takimId}`);
+  const sql = await db();
+  await sql`insert into oyuncu ${sql(yeni, "takim_id", "ad", "numara")}`;
+  bitir(ETIKET.turnuva);
+}
+
+export async function oyuncuSilAction(f: FormData) {
+  await yetkiGerekli();
+  const id = kimlik(f);
+  const tid = kimlik(f, "turnuva_id");
+  const sql = await db();
+  await sql`delete from oyuncu o using takim k where o.id = ${id} and k.id = o.takim_id and k.turnuva_id = ${tid}`;
   bitir(ETIKET.turnuva);
 }
 

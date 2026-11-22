@@ -4,11 +4,14 @@ import UstMenu from "@/components/UstMenu";
 import AltKisim from "@/components/AltKisim";
 import { OG_BASE, SITE_AD } from "@/lib/site";
 import {
-  ASAMA_AD, DURUM_AD, ELEME, golKralligi, kazanan, oynandi, puanDurumu, tarihYaz, turnuvaVerisi,
-  type Mac, type Takim,
+  ASAMA_AD, DURUM_AD, SIRALI_ASAMA, asistKralligi, golKralligi, kazanan, oynandi, puanDurumu, tarihYaz, turnuvaVerisi,
+  type Gol, type Mac, type Oyuncu, type Takim,
 } from "@/lib/turnuva";
 import Agac from "./Agac";
 import BasvuruFormu from "./BasvuruFormu";
+import CanliYenile from "./CanliYenile";
+import PaylasDugmesi from "./PaylasDugmesi";
+import TakimRozet, { TakimAdi } from "./TakimRozet";
 
 const ACIKLAMA = "İYTE Cup: gruplar, puan durumu, eleme ağacı, fikstür, gol krallığı ve takım başvurusu.";
 
@@ -46,10 +49,12 @@ function Bos() {
 type V = NonNullable<Awaited<ReturnType<typeof turnuvaVerisi>>>;
 
 function Icerik({ v }: { v: V }) {
-  const { turnuva: t, takimlar, maclar, goller } = v;
+  const { turnuva: t, takimlar, maclar, goller, oyuncular } = v;
   const ad = new Map(takimlar.map((k) => [k.id, k]));
   const puan = puanDurumu(takimlar, maclar);
   const kral = golKralligi(goller, takimlar).slice(0, 10);
+  const asist = asistKralligi(goller, takimlar).slice(0, 10);
+  const canlilar = maclar.filter((m) => m.canli && m.ev_id !== null && m.dep_id !== null);
   const final = maclar.find((m) => m.asama === "final");
   const sid = final ? kazanan(final) : null;
   const sampiyon = sid !== null ? ad.get(sid) : undefined;
@@ -57,10 +62,28 @@ function Icerik({ v }: { v: V }) {
   const eleme = maclar.filter((m) => m.asama !== "grup");
   const toplamGol = maclar.reduce((s, m) => s + (m.ev_gol ?? 0) + (m.dep_gol ?? 0), 0);
   const grupSay = puan.size || Math.max(1, Math.round(t.kontenjan / 4));
-  const asamalar = (["grup", ...ELEME] as const).filter((a) => maclar.some((m) => m.asama === a));
+  const asamalar = SIRALI_ASAMA.filter((a) => maclar.some((m) => m.asama === a));
 
   return (
     <>
+      {canlilar.length > 0 && (
+        <section className="canli-serit kap" aria-live="polite" aria-label="Canlı maçlar">
+          <CanliYenile />
+          {canlilar.map((m) => {
+            const sonGol = goller.filter((g) => g.mac_id === m.id).at(-1);
+            return (
+              <div className="canli-mac" key={m.id}>
+                <span className="canli-isaret">CANLI</span>
+                <span className="canli-takim ev"><span>{ad.get(m.ev_id!)?.ad}</span><TakimRozet t={ad.get(m.ev_id!)} boy={28} /></span>
+                <b className="canli-skor">{m.ev_gol ?? 0} - {m.dep_gol ?? 0}</b>
+                <span className="canli-takim"><TakimRozet t={ad.get(m.dep_id!)} boy={28} /><span>{ad.get(m.dep_id!)?.ad}</span></span>
+                {sonGol && <small className="canli-son">Son gol: {sonGol.dakika ? `${sonGol.dakika}' ` : ""}{sonGol.oyuncu}{sonGol.asist ? ` (asist: ${sonGol.asist})` : ""}</small>}
+              </div>
+            );
+          })}
+        </section>
+      )}
+
       <section className="s-giris kap">
         <p className="s-etiket">Turnuva · {t.sezon}</p>
         <h1>{t.ad}</h1>
@@ -85,7 +108,7 @@ function Icerik({ v }: { v: V }) {
           <div className="sampiyon">
             <div>
               <p className="s-etiket">Şampiyon</p>
-              <h2>{sampiyon.ad}</h2>
+              <h2 className="sampiyon-ad"><TakimRozet t={sampiyon} boy={56} /><span>{sampiyon.ad}</span></h2>
               {final && finalist && (
                 <p>
                   Finalde {finalist.ad} ile {final.ev_gol}-{final.dep_gol}
@@ -104,8 +127,8 @@ function Icerik({ v }: { v: V }) {
 
       {eleme.length > 0 && (
         <section className="s-bolum kap" id="agac">
-          <h2>Eleme ağacı</h2>
-          <p className="s-aciklama">Rövanş yok, ikinci şans yok. Kaybeden elenir; beraberlikte penaltılar.</p>
+          <div className="bas-satir"><h2>Eleme ağacı</h2><PaylasDugmesi yol={`/turnuva/gorsel/agac?t=${t.id}`} dosya={`${t.ad}-eleme-agaci`} /></div>
+          <p className="s-aciklama">Rövanş yok, ikinci şans yok. Kaybeden elenir; beraberlikte penaltılar. Yarı finali kaybedenler 3.lük maçında karşılaşır.</p>
           <Agac maclar={eleme} takimlar={takimlar} />
         </section>
       )}
@@ -117,8 +140,9 @@ function Icerik({ v }: { v: V }) {
           <div className="gruplar">
             {[...puan.entries()].map(([g, satirlar]) => (
               <div className="tablo-kap" key={g}>
+                <div className="grup-bas"><span>{g} Grubu</span><PaylasDugmesi yol={`/turnuva/gorsel/grup/${g}?t=${t.id}`} dosya={`${t.ad}-${g}-grubu`} etiket="" sinif="paylas ikon" /></div>
                 <table className="puan">
-                  <caption>{g} Grubu</caption>
+                  <caption className="gizli">{g} Grubu puan durumu</caption>
                   <thead>
                     <tr>
                       <th scope="col" className="takim">Takım</th>
@@ -130,7 +154,7 @@ function Icerik({ v }: { v: V }) {
                   <tbody>
                     {satirlar.map((s, i) => (
                       <tr key={s.takim.id} className={i < 2 ? "cikan" : undefined}>
-                        <th scope="row" className="takim"><span className="no">{i + 1}</span>{s.takim.ad}</th>
+                        <th scope="row" className="takim"><span className="no">{i + 1}</span><TakimAdi t={s.takim} boy={20} /></th>
                         <td>{s.O}</td><td>{s.G}</td><td>{s.B}</td><td>{s.M}</td><td>{s.AG}</td><td>{s.YG}</td>
                         <td>{s.AV > 0 ? `+${s.AV}` : s.AV}</td><td className="p">{s.P}</td>
                       </tr>
@@ -150,28 +174,31 @@ function Icerik({ v }: { v: V }) {
             <details key={a} className="asama" open={a === asamalar[asamalar.length - 1]}>
               <summary>{ASAMA_AD[a]}<small>{maclar.filter((m) => m.asama === a).length} maç</small></summary>
               <ol className="maclar">
-                {maclar.filter((m) => m.asama === a).map((m) => <MacSatiri key={m.id} m={m} ad={ad} />)}
+                {maclar.filter((m) => m.asama === a).map((m) => <MacSatiri key={m.id} m={m} ad={ad} goller={goller.filter((g) => g.mac_id === m.id)} />)}
               </ol>
             </details>
           ))}
         </section>
       )}
 
-      {kral.length > 0 && (
+      {(kral.length > 0 || asist.length > 0) && (
         <section className="s-bolum kap" id="gol-kralligi">
-          <h2>Gol krallığı</h2>
-          <div className="tablo-kap dar">
-            <table className="kral">
-              <caption className="gizli">Gol krallığı, ilk 10</caption>
-              <thead><tr><th scope="col">#</th><th scope="col">Oyuncu</th><th scope="col">Takım</th><th scope="col">Gol</th></tr></thead>
-              <tbody>
-                {kral.map((k, i) => (
-                  <tr key={k.oyuncu + k.takim}>
-                    <td>{i + 1}</td><th scope="row">{k.oyuncu}</th><td>{k.takim}</td><td className="p">{k.gol}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <h2>Krallıklar</h2>
+          <div className="kralliklar">
+            <KralTablo baslik="Gol krallığı" birim="Gol" satirlar={kral.map((k) => ({ oyuncu: k.oyuncu, takim: k.takim, n: k.gol }))} takimlar={takimlar} />
+            {asist.length > 0 && <KralTablo baslik="Asist krallığı" birim="Asist" satirlar={asist.map((k) => ({ oyuncu: k.oyuncu, takim: k.takim, n: k.asist }))} takimlar={takimlar} />}
+          </div>
+        </section>
+      )}
+
+      {oyuncular.length > 0 && (
+        <section className="s-bolum kap" id="kadrolar">
+          <h2>Kadrolar</h2>
+          <p className="s-aciklama">Takıma dokun, kadrosu açılsın. Gol ve asistler turnuva toplamıdır.</p>
+          <div className="kadrolar">
+            {takimlar.filter((k) => oyuncular.some((o) => o.takim_id === k.id)).map((k) => (
+              <Kadro key={k.id} takim={k} oyuncular={oyuncular.filter((o) => o.takim_id === k.id)} goller={goller.filter((g) => g.takim_id === k.id)} />
+            ))}
           </div>
         </section>
       )}
@@ -200,18 +227,65 @@ function Icerik({ v }: { v: V }) {
   );
 }
 
-function MacSatiri({ m, ad }: { m: Mac; ad: Map<number, Takim> }) {
+function MacSatiri({ m, ad, goller }: { m: Mac; ad: Map<number, Takim>; goller: Gol[] }) {
   const k = kazanan(m);
-  const isim = (id: number | null) => (id === null ? "Belli değil" : ad.get(id)?.ad ?? "?");
+  const tk = (id: number | null) => (id === null ? undefined : ad.get(id));
+  const yaz = (l: Gol[]) => l.map((g) => `${g.oyuncu}${g.dakika ? ` ${g.dakika}'` : ""}`).join(", ");
+  const evG = goller.filter((g) => g.takim_id === m.ev_id), depG = goller.filter((g) => g.takim_id === m.dep_id);
   return (
-    <li className="mac">
-      <span className="zaman">{tarihYaz(m.zaman, true)}{m.grup ? ` · ${m.grup}` : ""}</span>
-      <span className={"ev" + (k !== null && k === m.ev_id ? " galip" : "")}>{isim(m.ev_id)}</span>
+    <li className={"mac" + (m.canli ? " canli" : "")}>
+      <span className="zaman">{m.canli ? <b className="canli-isaret">CANLI</b> : tarihYaz(m.zaman, true)}{m.grup ? ` · ${m.grup}` : ""}</span>
+      <span className={"ev" + (k !== null && k === m.ev_id ? " galip" : "")}><TakimAdi t={tk(m.ev_id)} boy={20} /></span>
       <span className="skor">
         {oynandi(m) ? `${m.ev_gol} - ${m.dep_gol}` : "–"}
         {m.ev_pen !== null && m.dep_pen !== null && <small>pen. {m.ev_pen}-{m.dep_pen}</small>}
       </span>
-      <span className={"dep" + (k !== null && k === m.dep_id ? " galip" : "")}>{isim(m.dep_id)}</span>
+      <span className={"dep" + (k !== null && k === m.dep_id ? " galip" : "")}><TakimAdi t={tk(m.dep_id)} boy={20} /></span>
+      <span className="mac-paylas">{oynandi(m) && m.ev_id !== null && m.dep_id !== null && <PaylasDugmesi yol={`/turnuva/gorsel/mac/${m.id}`} dosya={`mac-${m.id}`} etiket="" sinif="paylas ikon" />}</span>
+      {goller.length > 0 && (
+        <span className="mac-goller"><span>{yaz(evG)}</span><span>{yaz(depG)}</span></span>
+      )}
     </li>
+  );
+}
+
+function KralTablo({ baslik, birim, satirlar, takimlar }: { baslik: string; birim: string; satirlar: { oyuncu: string; takim: string; n: number }[]; takimlar: Takim[] }) {
+  const tk = new Map(takimlar.map((t) => [t.ad, t]));
+  return (
+    <div className="tablo-kap">
+      <table className="kral">
+        <caption>{baslik}</caption>
+        <thead><tr><th scope="col">#</th><th scope="col">Oyuncu</th><th scope="col">Takım</th><th scope="col">{birim}</th></tr></thead>
+        <tbody>
+          {satirlar.map((k, i) => (
+            <tr key={k.oyuncu + k.takim}>
+              <td>{i + 1}</td><th scope="row">{k.oyuncu}</th><td><TakimAdi t={tk.get(k.takim)} boy={18} /></td><td className="p">{k.n}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Kadro({ takim, oyuncular, goller }: { takim: Takim; oyuncular: Oyuncu[]; goller: Gol[] }) {
+  const ayni = (o: Oyuncu, id: number | null, isim: string) => (id !== null ? id === o.id : isim.toLocaleLowerCase("tr") === o.ad.toLocaleLowerCase("tr"));
+  return (
+    <details className="kadro">
+      <summary><TakimAdi t={takim} boy={26} /><small>{oyuncular.length} oyuncu</small></summary>
+      <ol>
+        {oyuncular.map((o) => {
+          const gol = goller.filter((g) => ayni(o, g.oyuncu_id, g.oyuncu)).length;
+          const as = goller.filter((g) => g.asist && ayni(o, g.asist_id, g.asist)).length;
+          return (
+            <li key={o.id}>
+              <span className="no">{o.numara ?? "–"}</span>
+              <span className="ad">{o.ad}</span>
+              <span className="ist">{gol > 0 && <b>{gol} gol</b>}{as > 0 && <i>{as} asist</i>}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </details>
   );
 }

@@ -135,4 +135,19 @@ create table if not exists giris_deneme (
   zaman timestamptz not null default now()
 );
 create index if not exists giris_deneme_ip on giris_deneme (ip, zaman);
+
+-- V2 (2026-11-22, Derin geri bildirimi): takim logosu/rengi, kadrolar, asist, canli mac, 3.luk maci (asama 'ucuncu')
+alter table takim add column if not exists logo text;
+alter table takim add column if not exists renk text;
+create table if not exists oyuncu (
+  id serial primary key,
+  takim_id int not null references takim(id) on delete cascade,
+  ad text not null,
+  numara int
+);
+create index if not exists oyuncu_takim on oyuncu (takim_id);
+alter table gol add column if not exists oyuncu_id int references oyuncu(id) on delete set null;
+alter table gol add column if not exists asist text not null default '';
+alter table gol add column if not exists asist_id int references oyuncu(id) on delete set null;
+alter table mac add column if not exists canli boolean not null default false;
 `;

@@ -40,6 +40,10 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  // Paylasim gorselleri fontu ve rozeti calisma aninda fs ile okur; Vercel fonksiyon paketine girsin
+  outputFileTracingIncludes: {
+    "/turnuva/gorsel/**": ["./src/assets/**"],
+  },
   // Kale Agi ana sayfaya tasindi; eski adres kalici yonlendirme ile gelir.
   async redirects() {
     return [{ source: "/kale-agi", destination: "/", permanent: true }];

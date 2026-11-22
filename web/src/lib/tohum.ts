@@ -22,6 +22,8 @@ export const VARSAYILAN_AYAR: Record<string, string> = {
 export async function tohumla(sql: postgres.Sql) {
   const ilk = await sql`insert into ayar (anahtar, deger) values ('tohum', now()::text) on conflict do nothing returning anahtar`;
   if (!ilk.length) return;
+  // Yeni kurulumda tohum zaten guncel bicimde (kadro, asist, 3.luk); eski veriye yonelik gecisler atlanir
+  await sql`insert into ayar (anahtar, deger) values ('gecis_v2', 'tohum') on conflict do nothing`;
   for (const [k, v] of Object.entries(VARSAYILAN_AYAR)) {
     await sql`insert into ayar (anahtar, deger) values (${k}, ${v}) on conflict do nothing`;
   }

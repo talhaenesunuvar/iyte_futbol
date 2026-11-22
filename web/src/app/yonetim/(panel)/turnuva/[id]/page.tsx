@@ -3,13 +3,16 @@ import { notFound } from "next/navigation";
 import { yetkiGerekli } from "@/lib/yetki";
 import { waNumara } from "@/lib/islem";
 import {
-  ASAMA_AD, DURUM_AD, ELEME, GRUP_HARF, basvurular, kazanan, oynandi, puanDurumu, turnuvaPanel, yerelDeger,
-  type Gol, type Mac, type Takim,
+  ASAMA_AD, DURUM_AD, GRUP_HARF, SIRALI_ASAMA, basvurular, kazanan, oynandi, puanDurumu, renkGecerli, turnuvaPanel, yerelDeger,
+  type Gol, type Mac, type Oyuncu, type Takim,
 } from "@/lib/turnuva";
 import TurnuvaFormu from "../TurnuvaFormu";
+import LogoYukle from "../LogoYukle";
+import PaylasDugmesi from "@/app/turnuva/PaylasDugmesi";
 import {
   basvuruOnaylaAction, basvuruReddetAction, elemeOlusturAction, golEkleAction, golSilAction, grupFiksturuAction,
-  kuraCekAction, macKaydetAction, takimEkleAction, takimGuncelleAction, takimSilAction, turnuvaSilAction,
+  kadroTopluAction, kuraCekAction, macKaydetAction, oyuncuEkleAction, oyuncuSilAction,
+  takimEkleAction, takimGuncelleAction, takimSilAction, turnuvaSilAction,
 } from "../islemler";
 
 export const metadata = { title: "Turnuva yönet" };
@@ -24,13 +27,13 @@ export default async function TurnuvaYonet({ params, searchParams }: Props) {
   if (!v) notFound();
   const hataH = (await searchParams).hata;
   const hata = Array.isArray(hataH) ? hataH[0] : hataH;
-  const { turnuva: t, takimlar, maclar, goller } = v;
+  const { turnuva: t, takimlar, maclar, goller, oyuncular } = v;
   const bv = await basvurular(id);
   const bekleyen = bv.filter((b) => b.durum === "bekliyor");
   const puan = puanDurumu(takimlar, maclar);
   const grupMac = maclar.filter((m) => m.asama === "grup");
   const elemeMac = maclar.filter((m) => m.asama !== "grup");
-  const asamalar = (["grup", ...ELEME] as const).filter((a) => maclar.some((m) => m.asama === a));
+  const asamalar = SIRALI_ASAMA.filter((a) => maclar.some((m) => m.asama === a));
   const G = Math.max(1, Math.round(t.kontenjan / 4));
   const T = t.id;
 
@@ -103,12 +106,13 @@ export default async function TurnuvaYonet({ params, searchParams }: Props) {
           <label>Takım adı<input name="ad" maxLength={60} required /></label>
           <label>Torba<input name="torba" type="number" min={1} max={8} /></label>
           <label>Grup<GrupSec ad="grup" deger={null} G={G} /></label>
+          <label>Renk<input name="renk" type="color" defaultValue="#8B151A" /></label>
           <div><button className="y-btn" type="submit">Takım ekle</button></div>
         </form>
         {takimlar.length > 0 && (
           <div className="y-tablo-kap">
             <table className="y-tablo">
-              <thead><tr><th>Takım</th><th>Torba</th><th>Grup</th><th></th></tr></thead>
+              <thead><tr><th>Takım</th><th>Torba</th><th>Grup</th><th>Renk</th><th>Logo</th><th></th></tr></thead>
               <tbody>
                 {takimlar.map((k) => {
                   const fid = `tk-${k.id}`;
@@ -117,6 +121,8 @@ export default async function TurnuvaYonet({ params, searchParams }: Props) {
                       <td><input form={fid} name="ad" defaultValue={k.ad} maxLength={60} aria-label="Takım adı" /></td>
                       <td style={{ width: 90 }}><input form={fid} name="torba" type="number" min={1} max={8} defaultValue={k.torba ?? ""} aria-label="Torba" /></td>
                       <td style={{ width: 90 }}><GrupSec form={fid} ad="grup" deger={k.grup} G={Math.max(G, GRUP_HARF.indexOf(k.grup ?? "A") + 1)} /></td>
+                      <td style={{ width: 64 }}><input form={fid} name="renk" type="color" defaultValue={renkGecerli(k.renk) ? k.renk : "#B2B5B9"} aria-label="Takım rengi" style={{ padding: 2, height: 36 }} /></td>
+                      <td><LogoYukle formId={fid} mevcut={k.logo_v ? `/turnuva/logo/${k.id}?v=${k.logo_v}` : null} /></td>
                       <td className="sag" style={{ whiteSpace: "nowrap" }}>
                         <form id={fid} action={takimGuncelleAction} className="y-satirici">
                           <input type="hidden" name="id" value={k.id} /><input type="hidden" name="turnuva_id" value={T} />
@@ -132,6 +138,47 @@ export default async function TurnuvaYonet({ params, searchParams }: Props) {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+      </section>
+
+      <section className="y-kart" id="kadrolar">
+        <h2>Kadrolar <span className="y-soluk">{oyuncular.length} oyuncu</span></h2>
+        <p className="y-soluk">Gol ve asist girerken oyuncular buradan seçilir. Toplu eklemede her satıra bir oyuncu: &quot;10 Ahmet Yılmaz&quot;.</p>
+        {takimlar.length === 0 ? <p className="y-bos">Önce takım ekle.</p> : (
+          <div style={{ display: "grid", gap: 8 }}>
+            {takimlar.map((k) => {
+              const ko = oyuncular.filter((o) => o.takim_id === k.id);
+              return (
+                <details key={k.id} className="y-ac" id={`kadro-${k.id}`}>
+                  <summary>{k.ad} <span className="y-soluk">({ko.length})</span></summary>
+                  <div style={{ display: "grid", gap: 10, marginTop: 8 }}>
+                    {ko.length > 0 && (
+                      <div className="y-dugmeler">
+                        {ko.map((o) => (
+                          <form key={o.id} action={oyuncuSilAction} className="y-rozet gri" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <input type="hidden" name="id" value={o.id} /><input type="hidden" name="turnuva_id" value={T} />
+                            {o.numara !== null ? `${o.numara} ` : ""}{o.ad}
+                            <button type="submit" className="y-bag" aria-label={`${o.ad} sil`} title="Sil" style={{ color: "#A4201C", fontWeight: 800 }}>×</button>
+                          </form>
+                        ))}
+                      </div>
+                    )}
+                    <form action={oyuncuEkleAction} className="y-satir">
+                      <input type="hidden" name="turnuva_id" value={T} /><input type="hidden" name="takim_id" value={k.id} />
+                      <label>No<input name="numara" type="number" min={0} max={99} /></label>
+                      <label>Ad soyad<input name="ad" maxLength={60} required /></label>
+                      <div><button className="y-btn ikincil" type="submit">Ekle</button></div>
+                    </form>
+                    <form action={kadroTopluAction} className="y-form">
+                      <input type="hidden" name="turnuva_id" value={T} /><input type="hidden" name="takim_id" value={k.id} />
+                      <label>Toplu ekle<textarea name="liste" rows={4} placeholder={"1 Mert Kaya\n10 Emre Demir\nCan Aydın"} /></label>
+                      <div><button className="y-btn ikincil" type="submit">Listeyi ekle</button></div>
+                    </form>
+                  </div>
+                </details>
+              );
+            })}
           </div>
         )}
       </section>
@@ -160,11 +207,15 @@ export default async function TurnuvaYonet({ params, searchParams }: Props) {
         </div>
         {puan.size > 0 && (
           <details className="y-ac">
-            <summary>Puan durumu</summary>
+            <summary>Puan durumu ve paylaşım</summary>
             <div className="y-izgara" style={{ marginTop: 10 }}>
               {[...puan.entries()].map(([g, s]) => (
-                <div key={g} className="y-soluk"><strong>{g}:</strong> {s.map((x, i) => `${i + 1}. ${x.takim.ad} (${x.P})`).join(", ")}</div>
+                <div key={g} className="y-soluk" style={{ display: "grid", gap: 6, justifyItems: "start" }}>
+                  <span><strong>{g}:</strong> {s.map((x, i) => `${i + 1}. ${x.takim.ad} (${x.P})`).join(", ")}</span>
+                  <PaylasDugmesi yol={`/turnuva/gorsel/grup/${g}?t=${T}`} dosya={`${t.ad}-${g}-grubu`} etiket={`${g} grubu görseli`} sinif="y-btn ikincil kucuk" />
+                </div>
               ))}
+              {elemeMac.length > 0 && <PaylasDugmesi yol={`/turnuva/gorsel/agac?t=${T}`} dosya={`${t.ad}-eleme-agaci`} etiket="Eleme ağacı görseli" sinif="y-btn ikincil kucuk" />}
             </div>
           </details>
         )}
@@ -173,7 +224,7 @@ export default async function TurnuvaYonet({ params, searchParams }: Props) {
           <details key={a} className="y-ac" open={a !== "grup" || elemeMac.length === 0}>
             <summary>{ASAMA_AD[a]} <span className="y-soluk">({maclar.filter((m) => m.asama === a).filter(oynandi).length}/{maclar.filter((m) => m.asama === a).length} oynandı)</span></summary>
             <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
-              {maclar.filter((m) => m.asama === a).map((m) => <MacKarti key={m.id} m={m} T={T} takimlar={takimlar} goller={goller.filter((g) => g.mac_id === m.id)} />)}
+              {maclar.filter((m) => m.asama === a).map((m) => <MacKarti key={m.id} m={m} T={T} takimlar={takimlar} oyuncular={oyuncular} goller={goller.filter((g) => g.mac_id === m.id)} />)}
             </div>
           </details>
         ))}
@@ -202,7 +253,7 @@ function GrupSec({ ad, deger, G, form }: { ad: string; deger: string | null; G: 
   );
 }
 
-function MacKarti({ m, T, takimlar, goller }: { m: Mac; T: number; takimlar: Takim[]; goller: Gol[] }) {
+function MacKarti({ m, T, takimlar, oyuncular, goller }: { m: Mac; T: number; takimlar: Takim[]; oyuncular: Oyuncu[]; goller: Gol[] }) {
   const ad = (id: number | null) => (id === null ? "Belli değil" : takimlar.find((k) => k.id === id)?.ad ?? "?");
   const k = kazanan(m);
   const eleme = m.asama !== "grup";
@@ -238,7 +289,12 @@ function MacKarti({ m, T, takimlar, goller }: { m: Mac; T: number; takimlar: Tak
             </span>
           </label>
         )}
-        <div><button className="y-btn" type="submit">Kaydet</button></div>
+        <div className="y-dugmeler">
+          <button className="y-btn" type="submit">Kaydet</button>
+          {m.ev_id !== null && m.dep_id !== null && <Link className="y-btn ikincil" href={`/yonetim/turnuva/mac/${m.id}`}>{m.canli ? "● Canlı yönet" : "Canlı yönet"}</Link>}
+          {oynandi(m) && m.ev_id !== null && m.dep_id !== null && <PaylasDugmesi yol={`/turnuva/gorsel/mac/${m.id}`} dosya={`mac-${m.id}`} etiket="Görsel" sinif="y-btn ikincil" />}
+          {m.canli && <span className="y-rozet kirmizi">CANLI</span>}
+        </div>
       </form>
       {m.ev_id !== null && m.dep_id !== null && (
         <details className="y-ac">
@@ -247,19 +303,16 @@ function MacKarti({ m, T, takimlar, goller }: { m: Mac; T: number; takimlar: Tak
             {goller.map((g) => (
               <form key={g.id} action={golSilAction} className="y-dugmeler">
                 <input type="hidden" name="id" value={g.id} /><input type="hidden" name="turnuva_id" value={T} />
-                <span>{g.dakika ? `${g.dakika}'` : "–"} <strong>{g.oyuncu}</strong> <span className="y-soluk">{ad(g.takim_id)}</span></span>
+                <span>{g.dakika ? `${g.dakika}'` : "–"} <strong>{g.oyuncu}</strong>{g.asist && <span className="y-soluk"> (asist: {g.asist})</span>} <span className="y-soluk">{ad(g.takim_id)}</span></span>
                 <button className="y-btn tehlike kucuk" type="submit">Sil</button>
               </form>
             ))}
             <form action={golEkleAction} className="y-satir">
               <input type="hidden" name="mac_id" value={m.id} /><input type="hidden" name="turnuva_id" value={T} />
-              <label>Takım
-                <select name="takim_id" defaultValue={m.ev_id}>
-                  <option value={m.ev_id}>{ad(m.ev_id)}</option>
-                  <option value={m.dep_id}>{ad(m.dep_id)}</option>
-                </select>
-              </label>
-              <label>Oyuncu<input name="oyuncu" maxLength={60} required /></label>
+              <label>Golü atan<GolcuSec m={m} takimlar={takimlar} oyuncular={oyuncular} /></label>
+              <label>Adı (listede yoksa)<input name="oyuncu" maxLength={60} placeholder="Diğer seçiliyse" /></label>
+              <label>Asist<AsistSec m={m} takimlar={takimlar} oyuncular={oyuncular} /></label>
+              <label>Asist adı (listede yoksa)<input name="asist_ad" maxLength={60} /></label>
               <label>Dakika<input name="dakika" type="number" min={1} max={130} /></label>
               <div><button className="y-btn ikincil" type="submit">Gol ekle</button></div>
             </form>
@@ -275,6 +328,38 @@ function TakimSec({ ad, deger, takimlar }: { ad: string; deger: number | null; t
     <select name={ad} defaultValue={deger ?? ""}>
       <option value="">— Belli değil —</option>
       {takimlar.map((k) => <option key={k.id} value={k.id}>{k.ad}{k.grup ? ` (${k.grup})` : ""}</option>)}
+    </select>
+  );
+}
+
+// Gol atan: iki takimin kadrolari (o:<id>) + her takim icin "Diger" (t:<id>, ad serbest yazilir)
+function GolcuSec({ m, takimlar, oyuncular }: { m: Mac; takimlar: Takim[]; oyuncular: Oyuncu[] }) {
+  const taraf = [m.ev_id, m.dep_id].filter((x): x is number => x !== null);
+  return (
+    <select name="kim" defaultValue={`t:${m.ev_id}`}>
+      {taraf.map((tid) => {
+        const k = takimlar.find((x) => x.id === tid);
+        return (
+          <optgroup key={tid} label={k?.ad ?? "?"}>
+            {oyuncular.filter((o) => o.takim_id === tid).map((o) => <option key={o.id} value={`o:${o.id}`}>{o.numara !== null ? `${o.numara} · ` : ""}{o.ad}</option>)}
+            <option value={`t:${tid}`}>Diğer ({k?.ad})</option>
+          </optgroup>
+        );
+      })}
+    </select>
+  );
+}
+
+function AsistSec({ m, takimlar, oyuncular }: { m: Mac; takimlar: Takim[]; oyuncular: Oyuncu[] }) {
+  const taraf = [m.ev_id, m.dep_id].filter((x): x is number => x !== null);
+  return (
+    <select name="asist" defaultValue="">
+      <option value="">Asist yok / yazacağım</option>
+      {taraf.map((tid) => (
+        <optgroup key={tid} label={takimlar.find((x) => x.id === tid)?.ad ?? "?"}>
+          {oyuncular.filter((o) => o.takim_id === tid).map((o) => <option key={o.id} value={`a:${o.id}`}>{o.numara !== null ? `${o.numara} · ` : ""}{o.ad}</option>)}
+        </optgroup>
+      ))}
     </select>
   );
 }

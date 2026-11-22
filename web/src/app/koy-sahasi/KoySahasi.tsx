@@ -107,7 +107,8 @@ export default function KoySahasi({ doluluk }: { doluluk: KoyDoluluk }) {
               )}
 
               {son && secim === null && (
-                <div className="ozet" role="status">
+                // Onay karti telefonda ekranin altinda kalip gozden kaciyordu (Derin "olmadi sanirim" dedi); belirince ekrana getir
+                <div className="ozet" role="status" ref={(el) => { el?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>
                   <strong>Randevun alındı.</strong>
                   <p>{gunBaslik(gunlerL.find((g) => g.anahtar === son.gun) ?? gun)}, {SLOTLAR[son.slot].etiket} · {son.ad}</p>
                   <small>Kod: {son.kod}. Gelemeyeceksen haber ver, saat başkasına açılsın.</small>

@@ -2,6 +2,7 @@ import "server-only";
 import postgres from "postgres";
 import { SEMA } from "./sema";
 import { tohumla } from "./tohum";
+import { gecisler } from "./gecis";
 
 // Tek veritabani baglantisi. Uretimde Neon Postgres (pooled adres, Vercel ortam degiskeni DATABASE_URL),
 // yerelde `npm run db` ile acilan PGlite sunucusu (127.0.0.1:5433). Ikisi de standart Postgres protokolu.
@@ -38,6 +39,7 @@ async function hazirla(sql: postgres.Sql) {
     if ((e as { code?: string }).code !== "23505") throw e;
   }
   await tohumla(sql);
+  await gecisler(sql);
 }
 
 // Sema ilk sorguda bir kez kurulur. Hata olursa bir sonraki istek tekrar dener.

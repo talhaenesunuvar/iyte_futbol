@@ -70,9 +70,10 @@
   .asama[open] summary::after{content:"−"}
   .asama summary small{font:600 14px var(--f-g);opacity:.6}
   .maclar{display:grid;gap:6px;padding-bottom:18px}
-  .mac{display:grid;grid-template-columns:150px minmax(0,1fr) 92px minmax(0,1fr);gap:10px;align-items:center;padding:10px 12px;border-radius:var(--k-m);background:var(--acik);font-size:15px}
+  .mac{display:grid;grid-template-columns:150px minmax(0,1fr) 92px minmax(0,1fr) 34px;gap:10px;align-items:center;padding:10px 12px;border-radius:var(--k-m);background:var(--acik);font-size:15px}
   .mac .zaman{font-size:13px;opacity:.7;white-space:nowrap}
-  .mac .ev{text-align:right;font-weight:600}
+  .mac .ev{text-align:right;font-weight:600;display:flex;justify-content:flex-end}
+  .mac .ev .tk-ad{flex-direction:row-reverse}
   .mac .dep{font-weight:600}
   .mac .galip{color:var(--bordo);font-weight:800}
   .mac .skor{text-align:center;font:800 20px/1 var(--f-b);white-space:nowrap}
@@ -83,13 +84,86 @@
   .kurallar li::marker{color:var(--bordo);font-weight:700}
   .ornek{padding-bottom:40px}
 
+
+  /* Takim rozeti */
+  .tk-rozet{display:inline-grid;place-items:center;flex:none;border-radius:50%;font:800 10px/1 var(--f-b);letter-spacing:.02em;object-fit:contain;background:var(--acik);overflow:hidden}
+  img.tk-rozet{background:transparent;border-radius:6px}
+  .tk-rozet.bos{background:transparent;border:1px dashed var(--gri)}
+  .tk-ad{display:inline-flex;align-items:center;gap:8px;min-width:0;max-width:100%}
+  .tk-ad-y{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .ag-ad{display:flex;align-items:center;gap:6px;min-width:0}
+  .ag-ad>span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .puan .takim .tk-ad{vertical-align:middle;max-width:calc(100% - 1.6em)}
+  .sampiyon-ad{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .sampiyon-ad .tk-rozet{box-shadow:0 0 0 3px rgba(255,255,255,.85)}
+
+  /* Paylas dugmeleri */
+  .bas-satir{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px}
+  .paylas{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:2px solid var(--karbon);border-radius:var(--k-m);background:var(--beyaz);color:var(--karbon);font:700 14px/1 var(--f-g);cursor:pointer;white-space:nowrap}
+  .paylas:hover{background:var(--karbon);color:var(--beyaz)}
+  .paylas:active{transform:scale(.97)}
+  .paylas[aria-busy="true"]{opacity:.6;cursor:wait}
+  .paylas.ikon{padding:6px;border-width:1px;border-color:var(--gri);border-radius:var(--k-s)}
+  .paylas.ikon span:empty{display:none}
+  .paylas.ikon:hover{border-color:var(--karbon)}
+  .grup-bas{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 12px 4px 14px;font:italic 800 24px/1 var(--f-b);color:var(--bordo)}
+  .mac-paylas{display:flex;justify-content:flex-end}
+  .mac-goller{grid-column:2/5;display:grid;grid-template-columns:minmax(0,1fr) 92px minmax(0,1fr);gap:10px;font-size:12.5px;opacity:.7}
+  .mac-goller span:first-child{text-align:right}
+  .mac-goller span:last-child{grid-column:3}
+
+  /* Canli */
+  .canli-serit{padding-top:clamp(20px,4vw,36px);display:grid;gap:10px}
+  .canli-mac{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px 16px;padding:14px 18px;border-radius:var(--k-l);background:var(--karbon);color:var(--beyaz)}
+  .canli-takim{display:flex;align-items:center;gap:10px;font-weight:700;min-width:0}
+  .canli-takim span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .canli-takim.ev{justify-content:flex-end;text-align:right}
+  .canli-skor{font:italic 800 clamp(32px,5vw,48px)/1 var(--f-b);white-space:nowrap}
+  .canli-son{grid-column:1/-1;opacity:.75;font-size:13px}
+  .canli-isaret{display:inline-flex;align-items:center;gap:6px;font:800 12px/1 var(--f-g);letter-spacing:.12em;color:#FF5A5F}
+  .canli-isaret::before{content:"";width:8px;height:8px;border-radius:50%;background:#FF3B41;animation:nabiz 1.4s ease-in-out infinite}
+  .mac.canli{background:#FBE9EA;outline:2px solid var(--bordo)}
+  .mac .canli-isaret{color:var(--bordo)}
+  .tur li.canli{border-color:#FF3B41}
+  .ag-canli{position:absolute;right:8px;top:-9px;padding:2px 6px;border-radius:999px;background:#FF3B41;color:#fff;font:800 10px/1.2 var(--f-g);letter-spacing:.08em}
+
+  /* 3.luk maci (final sutununda) */
+  .ucuncu{margin-top:22px}
+  .ucuncu ol{flex:none}
+  .tur li.ucuncu-kart{border-style:dashed}
+
+  /* Kralliklar ve kadrolar */
+  .kralliklar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+  .kral caption{padding:14px 14px 6px}
+  .kadrolar{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px;align-items:start}
+  .kadro{border:2px solid var(--gri);border-radius:var(--k-l);background:var(--beyaz)}
+  .kadro[open]{border-color:var(--karbon)}
+  .kadro summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;font-weight:700}
+  .kadro summary::-webkit-details-marker{display:none}
+  .kadro summary small{font-weight:600;opacity:.6;white-space:nowrap}
+  .kadro ol{padding:0 14px 12px;display:grid;gap:2px}
+  .kadro li{display:grid;grid-template-columns:2.2em minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--acik);font-size:15px}
+  .kadro .no{font:800 17px/1 var(--f-b);color:var(--bordo)}
+  .kadro .ist{display:flex;gap:6px;font-size:12px}
+  .kadro .ist b,.kadro .ist i{font-style:normal;padding:2px 7px;border-radius:999px;background:var(--acik);font-weight:700}
+  .kadro .ist b{background:var(--bordo);color:var(--beyaz)}
+  @media(prefers-reduced-motion:reduce){.canli-isaret::before{animation:none}}
+
   @media(max-width:760px){
     .sampiyon{grid-template-columns:1fr}
-    .mac{grid-template-columns:minmax(0,1fr) 70px minmax(0,1fr);row-gap:4px}
+    .mac{grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr) 30px;row-gap:4px;column-gap:8px}
     .mac .zaman{grid-column:1/-1}
+    .mac .tk-ad-y{white-space:normal;overflow:visible;line-height:1.15}
+    .mac .mac-goller{grid-column:1/4;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr)}
+    .kralliklar{grid-template-columns:1fr}
+    .canli-mac{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
+    .canli-mac>.canli-isaret{grid-column:1/-1}
   }
   @media(max-width:420px){
     .sampiyon dl{grid-template-columns:1fr 1fr}
     .serit li{padding:6px 10px;font-size:14px}
   }
 }
+
+/* Canli isaret nabzi (keyframes ic ice yazilamaz) */
+@keyframes nabiz{50%{opacity:.25;transform:scale(.8)}}

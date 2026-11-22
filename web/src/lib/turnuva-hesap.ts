@@ -2,24 +2,29 @@
 // Veritabanina dokunmaz; hem sayfalar hem panel hem tohum kullanir.
 
 export type Durum = "basvuru" | "grup" | "eleme" | "bitti";
-export type Asama = "grup" | "son16" | "ceyrek" | "yari" | "final";
+export type Asama = "grup" | "son16" | "ceyrek" | "yari" | "ucuncu" | "final";
 
 export type Turnuva = {
   id: number; ad: string; sezon: string; durum: Durum; aciklama: string; kurallar: string;
   kontenjan: number; basvuru_acik: boolean; aktif: boolean; ornek: boolean;
 };
-export type Takim = { id: number; ad: string; grup: string | null; torba: number | null };
+// logo_v: logonun kisa ozeti (surum); gorsel /turnuva/logo/[id]?v=... adresinden gelir. renk: #RRGGBB
+export type Takim = { id: number; ad: string; grup: string | null; torba: number | null; logo_v: string | null; renk: string | null };
+export type Oyuncu = { id: number; takim_id: number; ad: string; numara: number | null };
 export type Mac = {
   id: number; asama: Asama; grup: string | null; sira: number;
   ev_id: number | null; dep_id: number | null; zaman: string | null; saha: string;
-  ev_gol: number | null; dep_gol: number | null; ev_pen: number | null; dep_pen: number | null;
+  ev_gol: number | null; dep_gol: number | null; ev_pen: number | null; dep_pen: number | null; canli: boolean;
 };
-export type Gol = { id: number; mac_id: number; takim_id: number; oyuncu: string; dakika: number | null };
+export type Gol = { id: number; mac_id: number; takim_id: number; oyuncu: string; oyuncu_id: number | null; asist: string; asist_id: number | null; dakika: number | null };
 
 export const DURUM_AD: Record<Durum, string> = { basvuru: "Başvurular", grup: "Grup aşaması", eleme: "Eleme turları", bitti: "Tamamlandı" };
-export const ASAMA_AD: Record<Asama, string> = { grup: "Grup maçları", son16: "Son 16", ceyrek: "Çeyrek final", yari: "Yarı final", final: "Final" };
+export const ASAMA_AD: Record<Asama, string> = { grup: "Grup maçları", son16: "Son 16", ceyrek: "Çeyrek final", yari: "Yarı final", ucuncu: "3.lük maçı", final: "Final" };
+// Fikstur/panel gosterim sirasi (3.luk maci finalden once oynanir)
+export const SIRALI_ASAMA: Asama[] = ["grup", "son16", "ceyrek", "yari", "ucuncu", "final"];
 export const ELEME: Asama[] = ["son16", "ceyrek", "yari", "final"];
 export const ELEME_BOY: Record<string, number> = { son16: 8, ceyrek: 4, yari: 2, final: 1 };
+// Yari finalde kaybeden 3.luk macina: yari sira 1 -> ev, sira 2 -> deplasman
 export const DURUMLAR: Durum[] = ["basvuru", "grup", "eleme", "bitti"];
 export const GRUP_HARF = "ABCDEFGHIJKLMNOP".split("");
 
@@ -32,6 +37,12 @@ export function kazanan(m: Mac): number | null {
   if (m.dep_gol! > m.ev_gol!) return m.dep_id;
   if (m.ev_pen !== null && m.dep_pen !== null && m.ev_pen !== m.dep_pen) return m.ev_pen > m.dep_pen ? m.ev_id : m.dep_id;
   return null;
+}
+
+// Eleme macinin kaybedeni (karar yoksa null)
+export function kaybeden(m: Mac): number | null {
+  const k = kazanan(m);
+  return k === null ? null : k === m.ev_id ? m.dep_id : m.ev_id;
 }
 
 export const sonrakiAsama = (a: Asama): Asama | null => {
@@ -76,6 +87,31 @@ export function golKralligi(goller: Gol[], takimlar: Takim[]): GolKrali[] {
     say.set(k, v);
   }
   return [...say.values()].sort((a, b) => b.gol - a.gol || a.oyuncu.localeCompare(b.oyuncu, "tr"));
+}
+
+export type AsistKrali = { oyuncu: string; takim: string; asist: number };
+export function asistKralligi(goller: Gol[], takimlar: Takim[]): AsistKrali[] {
+  const ad = new Map(takimlar.map((t) => [t.id, t.ad]));
+  const say = new Map<string, AsistKrali>();
+  for (const g of goller) {
+    if (!g.asist) continue;
+    const k = `${g.takim_id}|${g.asist.toLocaleLowerCase("tr")}`;
+    const v = say.get(k) ?? { oyuncu: g.asist, takim: ad.get(g.takim_id) ?? "", asist: 0 };
+    v.asist++;
+    say.set(k, v);
+  }
+  return [...say.values()].sort((a, b) => b.asist - a.asist || a.oyuncu.localeCompare(b.oyuncu, "tr"));
+}
+
+// Takim rozeti: bas harfler ve okunur yazi rengi
+export function basHarf(ad: string) {
+  const k = ad.replace(/[^\p{L}\p{N} ]/gu, " ").split(/\s+/).filter(Boolean);
+  return ((k[0]?.[0] ?? "") + (k[1]?.[0] ?? "")).toLocaleUpperCase("tr") || "?";
+}
+export const renkGecerli = (r: string | null | undefined): r is string => !!r && /^#[0-9a-fA-F]{6}$/.test(r);
+export function yaziRengi(bg: string) {
+  const n = parseInt(bg.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  return 0.299 * r + 0.587 * g + 0.114 * b > 160 ? "#1A1A1A" : "#FFFFFF";
 }
 
 // Grup siralamasindan eleme eslesmesi: ilk yari g[2k]1 - g[2k+1]2, ikinci yari g[2k+1]1 - g[2k]2

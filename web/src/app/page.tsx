@@ -53,7 +53,9 @@ export default async function Ana() {
             </a>
             <Link href="/turnuva" className="h-kutu">
               <small>{tur ? `${tur.ad} ${tur.sezon}` : "Turnuva"}</small>
-              {tur?.durum === "bitti" && tur.sampiyon ? (
+              {tur?.canli ? (
+                <><strong>Canlı: {tur.canli.ev} {tur.canli.evGol}-{tur.canli.depGol} {tur.canli.dep}</strong><span>Maç şu an oynanıyor</span></>
+              ) : tur?.durum === "bitti" && tur.sampiyon ? (
                 <><strong>Şampiyon: {tur.sampiyon}</strong><span>{tur.takim} takım · {tur.gol} gol</span></>
               ) : tur ? (
                 <><strong>{DURUM[tur.durum]}</strong><span>{tur.takim} takım · {tur.oynanan}/{tur.mac} maç</span></>
