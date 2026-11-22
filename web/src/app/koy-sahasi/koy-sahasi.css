@@ -4,7 +4,13 @@
   --f-b: var(--font-barlow-c), sans-serif;
   --gecis: .32s cubic-bezier(.2,.8,.2,1);
 
-  main{padding-top:var(--nav-h)}
+  main{padding-top:60px}
+  /* Kendi ust seridi ve altligi: topluluk sitesinin menusu/logosu bu sayfada yok */
+  .koy-ust{position:fixed;inset:0 0 auto 0;height:60px;z-index:50;display:flex;align-items:center;justify-content:space-between;padding-inline:var(--pad);background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid var(--acik)}
+  .koy-ad{font:italic 800 22px/1 var(--f-b);text-decoration:none;color:var(--bordo)}
+  .koy-git{font-weight:700;font-size:15px;text-decoration:none;padding:8px 14px;border-radius:var(--k-m);background:var(--karbon);color:var(--beyaz)}
+  .koy-alt{padding:32px var(--pad);border-top:1px solid var(--gri);display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center;justify-content:space-between;font-size:15px}
+  .koy-alt small{opacity:.7;font-size:14px}
   .giris{padding-block:clamp(40px,8vw,96px) clamp(28px,5vw,56px);display:grid;gap:16px}
   .giris .etiket{font:700 14px/1 var(--f-g);letter-spacing:.14em;text-transform:uppercase;color:var(--bordo)}
   .giris h1{font-style:italic;font-size:clamp(64px,14vw,150px);line-height:.9;color:var(--bordo);letter-spacing:-.01em;padding-bottom:.06em}

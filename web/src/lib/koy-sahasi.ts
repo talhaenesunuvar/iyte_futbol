@@ -1,5 +1,5 @@
 // Koy Sahasi (hali saha) randevu modeli: slot tanimi, gun uretimi, tarih bicimleme, ornek doluluk
-// ve randevu istegi. Backend gelince yalnizca `doluSlotlar` ve `randevuAl` degisir; arayuz ayni kalir.
+// ve sunucu ile paylasilan tipler. Istemci ve sunucuda calisir (veritabani erisimi koy-veri.ts'te).
 
 // Turkiye 2016'dan beri sabit UTC+3 (yaz saati yok); Europe/Istanbul icin kutuphanesiz hesap yeterli.
 const SAAT_FARKI = 3;
@@ -44,19 +44,24 @@ export const gectiMi = (g: Gun, s: Slot, simdi: Date) => slotBitis(g, s) <= simd
 
 export const gunBaslik = (g: Gun) => `${g.gunNo} ${g.ayAd} ${g.ad}`;
 
-// ORNEK doluluk: haftanin gunune gore sabit liste (Math.random yok; sunucu/istemci ayni sonucu verir).
-// Backend: bu fonksiyon secili gunun doluluk listesini API'den alacak.
-const ORNEK_DOLU: Record<number, number[]> = { 0: [1, 2, 5], 1: [3], 2: [0, 4], 3: [2, 3, 6], 4: [1, 7], 5: [0, 1, 2, 8], 6: [2, 3, 4, 5] };
-export const doluSlotlar = (g: Gun) => new Set(ORNEK_DOLU[g.haftaGunu] ?? []);
-
-export type RandevuIstek = { gun: string; slot: number; ad: string; telefon: string; not?: string };
-export type RandevuSonuc = { tamam: true; kod: string } | { tamam: false; hata: string };
-
-// MOCK: 800 ms bekleyip basari doner. Backend baglaninca burasi tek bir fetch (POST randevu) olacak;
-// cakisma/dogrulama hatalari `{ tamam: false, hata }` ile donerse arayuz zaten gosteriyor.
-export function randevuAl(istek: RandevuIstek): Promise<RandevuSonuc> {
-  const kod = `KS-${istek.gun.slice(5).replace("-", "")}-${iki(istek.slot)}`;
-  return new Promise((coz) => setTimeout(() => coz({ tamam: true, kod }), 800));
+// Haftanin pazartesisi ("YYYY-MM-DD" -> "YYYY-MM-DD"). Haftada 1 randevu kurali bu anahtarla tutulur.
+export function haftaBasi(anahtar: string) {
+  const [y, a, g] = anahtar.split("-").map(Number);
+  const d = new Date(Date.UTC(y, a - 1, g));
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  return d.toISOString().slice(0, 10);
 }
+
+// "YYYY-MM-DD" anahtarindan Gun (sunucu dogrulamasi icin)
+export function gunAnahtardan(anahtar: string): Gun {
+  const [y, a, g] = anahtar.split("-").map(Number);
+  return gunler(new Date(Date.UTC(y, a - 1, g, 12 - SAAT_FARKI)), 1)[0];
+}
+
+// Sunucudan gelen doluluk: "tarih:slot" anahtarlari
+export type KoyDoluluk = { dolu: string[]; kapali: { anahtar: string; sebep: string }[] };
+export const slotAnahtar = (tarih: string, slot: number) => `${tarih}:${slot}`;
+
+export type RandevuSonuc = { tamam?: undefined; hata?: string } | { tamam: true; kod: string; gun: string; slot: number; ad: string };
 
 export const telefonGecerli = (t: string) => t.replace(/\D/g, "").length >= 10;

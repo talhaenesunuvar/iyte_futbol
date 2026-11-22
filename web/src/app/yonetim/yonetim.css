@@ -1,0 +1,96 @@
+/* Yonetim paneli. Sade, yogun, okunur. Tum kurallar .t-yon altinda (global CSS sayfa degisince kalkmaz).
+   Ortak siniflar (moduller bunlari kullanir):
+   .y-baslik (sayfa basligi satiri), .y-kart, .y-izgara (otomatik kart izgarasi), .y-form (dikey form),
+   .y-satir (yan yana alanlar), .y-tablo (tablo; .y-tablo-kap ile yatay kaydirma), .y-btn (.ikincil .tehlike .kucuk),
+   .y-rozet (.yesil .sari .kirmizi .gri), .y-soluk, .y-hata, .y-tamam, .y-bos (bos durum), .y-sayi (buyuk rakam). */
+.t-yon {
+  --y-zemin: #F6F6F7;
+  --y-cizgi: #E2E3E5;
+  min-height: 100dvh;
+  background: var(--y-zemin);
+  color: var(--karbon);
+  font-size: 15px;
+  line-height: 1.45;
+
+  h1, h2, h3 { font-family: var(--f-g); font-weight: 700; line-height: 1.2; }
+  h1 { font-size: 26px; }
+  h2 { font-size: 19px; }
+  h3 { font-size: 16px; }
+
+  .y-duzen { display: grid; grid-template-columns: 230px minmax(0, 1fr); min-height: 100dvh; }
+  .y-yan { position: sticky; top: 0; height: 100dvh; display: flex; flex-direction: column; gap: 18px; padding: 20px 14px; background: var(--karbon); color: #fff; }
+  .y-marka { display: flex; align-items: center; gap: 10px; text-decoration: none; font: 800 20px/1 var(--f-b); padding: 4px 8px; }
+  .y-menu { display: grid; gap: 2px; }
+  .y-menu a { text-decoration: none; padding: 9px 10px; border-radius: var(--k-s); font-weight: 600; opacity: .78; }
+  .y-menu a:hover { opacity: 1; background: rgba(255,255,255,.07); }
+  .y-menu a[aria-current] { opacity: 1; background: var(--bordo); }
+  .y-yan-alt { margin-top: auto; display: grid; gap: 6px; padding: 0 10px; font-size: 14px; }
+  .y-yan-alt a { text-decoration: none; opacity: .75; }
+  .y-bag { background: none; border: 0; padding: 0; color: inherit; font: inherit; opacity: .75; cursor: pointer; text-align: left; }
+  .y-bag:hover, .y-yan-alt a:hover { opacity: 1; }
+
+  .y-icerik { padding: clamp(18px, 3vw, 36px); display: grid; gap: 22px; align-content: start; max-width: 1200px; width: 100%; }
+  .y-baslik { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+  .y-baslik p { width: 100%; }
+
+  .y-kart { background: #fff; border: 1px solid var(--y-cizgi); border-radius: var(--k-l); padding: clamp(16px, 2vw, 22px); display: grid; gap: 14px; align-content: start; min-width: 0; }
+  .y-izgara { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .y-sayi { font: 800 40px/1 var(--f-b); }
+  .y-soluk { color: #5b5e63; font-size: 14px; }
+  .y-bos { color: #5b5e63; padding: 18px; text-align: center; border: 1px dashed var(--y-cizgi); border-radius: var(--k-m); }
+
+  .y-form { display: grid; gap: 12px; }
+  .y-satir { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); align-items: end; }
+  .y-form label, .y-satir label { display: grid; gap: 5px; font-size: 13px; font-weight: 600; color: #3b3e42; }
+  .t-yon input:not([type=checkbox]):not([type=radio]), .t-yon select, .t-yon textarea {
+    font: 500 15px var(--f-g); color: var(--karbon); padding: 9px 11px; border: 1px solid #C9CBCE; border-radius: var(--k-s); background: #fff; width: 100%; min-width: 0;
+  }
+  .t-yon textarea { resize: vertical; }
+  .t-yon input:focus-visible, .t-yon select:focus-visible, .t-yon textarea:focus-visible { outline: 2px solid var(--bordo); outline-offset: 1px; border-color: var(--bordo); }
+  .y-onay { display: flex !important; align-items: center; gap: 8px; font-weight: 600; }
+
+  .y-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 16px; border: 1px solid var(--bordo); border-radius: var(--k-s); background: var(--bordo); color: #fff; font: 700 14px/1.1 var(--f-g); text-decoration: none; cursor: pointer; white-space: nowrap; }
+  .y-btn:hover { filter: brightness(1.08); }
+  .y-btn:active { transform: scale(.98); }
+  .y-btn[disabled] { opacity: .55; cursor: wait; }
+  .y-btn.ikincil { background: #fff; color: var(--karbon); border-color: #C9CBCE; }
+  .y-btn.ikincil:hover { border-color: var(--karbon); filter: none; }
+  .y-btn.tehlike { background: #fff; color: #B4231F; border-color: #E8B4B2; }
+  .y-btn.tehlike:hover { background: #B4231F; color: #fff; filter: none; }
+  .y-btn.kucuk { padding: 5px 10px; font-size: 13px; }
+  .y-dugmeler { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  form.y-satirici { display: inline; }
+
+  .y-tablo-kap { overflow-x: auto; border: 1px solid var(--y-cizgi); border-radius: var(--k-m); background: #fff; }
+  .y-tablo { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .y-tablo th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #5b5e63; background: #FAFAFB; font-weight: 700; }
+  .y-tablo th, .y-tablo td { padding: 9px 12px; border-bottom: 1px solid var(--y-cizgi); vertical-align: middle; }
+  .y-tablo tr:last-child td { border-bottom: 0; }
+  .y-tablo td.sag, .y-tablo th.sag { text-align: right; }
+
+  .y-rozet { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #EEE; color: #3b3e42; white-space: nowrap; }
+  .y-rozet.yesil { background: #E3F4E8; color: #17672F; }
+  .y-rozet.sari { background: #FFF3D6; color: #8A5A00; }
+  .y-rozet.kirmizi { background: #FBE4E3; color: #A4201C; }
+  .y-rozet.gri { background: #EEEFF0; color: #5b5e63; }
+
+  .y-hata { color: #A4201C; font-weight: 600; font-size: 14px; }
+  .y-tamam { color: #17672F; font-weight: 600; font-size: 14px; }
+
+  details.y-ac > summary { cursor: pointer; font-weight: 700; list-style: none; }
+  details.y-ac > summary::-webkit-details-marker { display: none; }
+  details.y-ac > summary::before { content: "+ "; color: var(--bordo); }
+  details.y-ac[open] > summary::before { content: "− "; }
+
+  .y-giris { min-height: 100dvh; display: grid; place-items: center; padding: 16px; }
+  .y-giris .y-kart { width: min(100%, 380px); justify-items: start; }
+  .y-giris .y-form { width: 100%; }
+
+  @media (max-width: 860px) {
+    .y-duzen { grid-template-columns: 1fr; }
+    .y-yan { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; }
+    .y-menu { display: flex; flex-wrap: nowrap; overflow-x: auto; width: 100%; order: 3; scrollbar-width: none; }
+    .y-menu a { white-space: nowrap; }
+    .y-yan-alt { margin: 0 0 0 auto; display: flex; gap: 14px; }
+  }
+}

@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# yerel PGlite veritabani (npm run db)
+/.veri/
+!.env.example

@@ -1,22 +1,21 @@
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
 import "./koy-sahasi.css";
 import KoySahasi from "./KoySahasi";
-import { OG_BASE, SITE_AD } from "@/lib/site";
+import { koyDoluluk } from "@/lib/koy-veri";
+import { OG_BASE } from "@/lib/site";
 
-const ACIKLAMA = "Köy Sahası halı saha randevusu. Her gün 17.00–03.00 arası saat başı slotlar; gününü ve saatini seç, randevunu al.";
+const ACIKLAMA = "Köy Sahası ücretsiz halı saha randevusu. Her gün 17.00–03.00 arası saat başı; gününü ve saatini seç, randevunu al.";
 
-// Sayfa openGraph verince layout'unki (app/opengraph-image.png dahil) tamamen gider;
-// paylasim gorseli parent'tan alinip tasinir.
-export async function generateMetadata(_: PageProps<"/koy-sahasi">, parent: ResolvingMetadata): Promise<Metadata> {
-  const images = (await parent).openGraph?.images ?? [];
+// Topluluk sitesinden ayri: paylasim kartinda IYTE gorseli/adi tasinmaz (sayfa openGraph verince layout'unki duser).
+export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Köy Sahası",
+    title: { absolute: "Köy Sahası · Halı saha randevusu" },
     description: ACIKLAMA,
     alternates: { canonical: "/koy-sahasi" },
-    openGraph: { ...OG_BASE, title: `Köy Sahası · ${SITE_AD}`, description: ACIKLAMA, url: "/koy-sahasi", images },
+    openGraph: { ...OG_BASE, siteName: "Köy Sahası", title: "Köy Sahası", description: ACIKLAMA, url: "/koy-sahasi" },
   };
 }
 
-export default function Page() {
-  return <KoySahasi />;
+export default async function Page() {
+  return <KoySahasi doluluk={await koyDoluluk()} />;
 }

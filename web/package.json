@@ -6,14 +6,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db": "node -e \"require('fs').mkdirSync('.veri',{recursive:true})\" && pglite-server --db=./.veri/pg --port=5433"
   },
   "dependencies": {
     "next": "16.4.5",
+    "postgres": "^4.1.1",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.17",
+    "@electric-sql/pglite-socket": "^0.2.20",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

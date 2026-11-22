@@ -1,0 +1,95 @@
+/* Turnuva sayfasi. Global CSS sayfa degisince kalkmadigi icin her kural .t-tur altinda. */
+.t-tur {
+  --f-g: var(--font-barlow), system-ui, sans-serif;
+  --f-b: var(--font-barlow-c), sans-serif;
+
+  .rozet{display:inline-block;padding:6px 12px;border-radius:999px;font:700 13px/1 var(--f-g);letter-spacing:.06em;text-transform:uppercase;background:var(--acik);color:var(--karbon)}
+  .rozet.d-basvuru{background:var(--bordo);color:var(--beyaz)}
+  .rozet.d-grup,.rozet.d-eleme{background:var(--karbon);color:var(--beyaz)}
+
+  .serit{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .serit li{border:2px solid var(--gri);border-radius:var(--k-m);padding:8px 14px;font-size:15px;font-weight:600}
+  .serit b{font:italic 800 22px/1 var(--f-b);color:var(--bordo);margin-right:4px}
+
+  /* Sampiyon */
+  .sampiyon-kap{padding-bottom:clamp(48px,8vw,100px)}
+  .sampiyon{background:var(--bordo);color:var(--beyaz);border-radius:var(--k-xl);padding:clamp(24px,4vw,48px);display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:24px 40px;align-items:end;position:relative;overflow:hidden}
+  .sampiyon::after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;border:2px solid rgba(255,255,255,.14);border-radius:50%;pointer-events:none}
+  .sampiyon .s-etiket{color:rgba(255,255,255,.8)}
+  .sampiyon h2{font-style:italic;font-size:clamp(48px,8vw,110px);line-height:.92;margin:8px 0 10px;padding-bottom:.04em}
+  .sampiyon p{font-weight:500;opacity:.92}
+  .sampiyon dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0}
+  .sampiyon dl div{border-top:1px solid rgba(255,255,255,.3);padding-top:10px;min-width:0}
+  .sampiyon dt{font-size:13px;opacity:.8;font-weight:600}
+  .sampiyon dd{margin:0;font:italic 800 clamp(34px,4vw,52px)/1 var(--f-b)}
+  .sampiyon dd.kucuk{font-size:clamp(20px,2vw,26px);line-height:1.1}
+  .sampiyon dd small{display:block;font:600 13px var(--f-g);opacity:.8;margin-top:4px}
+
+  /* Eleme agaci: kendi kabinda yatay kayar */
+  .agac-kap{overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;padding:4px 2px 14px;margin-inline:-2px;scrollbar-width:thin}
+  .agac-kap:focus-visible{outline:3px solid var(--bordo);outline-offset:3px;border-radius:var(--k-s)}
+  .agac{display:grid;grid-template-columns:repeat(var(--tur),minmax(190px,1fr));gap:28px;min-width:calc(var(--tur) * 218px)}
+  .tur{display:flex;flex-direction:column;min-width:0}
+  .tur h3{font:700 13px/1 var(--f-g);letter-spacing:.1em;text-transform:uppercase;color:var(--bordo);margin-bottom:12px}
+  .tur ol{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:10px}
+  .tur li{position:relative;border:2px solid var(--gri);border-radius:var(--k-m);background:var(--beyaz);overflow:visible}
+  .tur:not(.son) li::after{content:"";position:absolute;left:100%;top:50%;width:28px;border-top:2px solid var(--gri)}
+  .tur li.final{border-color:var(--bordo);box-shadow:0 10px 30px var(--golge)}
+  .ag-t{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;font-size:14px;font-weight:600}
+  .ag-t+.ag-t{border-top:1px solid var(--acik)}
+  .ag-t span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .ag-t b{font:800 17px/1 var(--f-b);min-width:1.4em;text-align:right;white-space:nowrap}
+  .ag-t sup{font:700 10px var(--f-g);opacity:.7;margin-left:2px}
+  .ag-t.galip{color:var(--bordo)}
+  .ag-t.elendi{opacity:.5}
+
+  /* Puan tablolari */
+  .gruplar{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:18px}
+  .tablo-kap{overflow-x:auto;border:2px solid var(--gri);border-radius:var(--k-l);background:var(--beyaz)}
+  .tablo-kap.dar{max-width:720px}
+  table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+  caption{text-align:left;padding:14px 14px 6px;font:italic 800 24px/1 var(--f-b);color:var(--bordo)}
+  caption.gizli{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  th,td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--acik)}
+  thead th{font-size:12px;font-weight:700;opacity:.65}
+  tbody tr:last-child>*{border-bottom:0}
+  .puan .takim{text-align:left;white-space:nowrap;padding-left:14px;font-weight:600}
+  .puan .no{display:inline-block;width:1.4em;opacity:.55;font-weight:700}
+  .puan tr.cikan .no{color:var(--bordo);opacity:1}
+  .puan tr.cikan th{color:var(--karbon)}
+  .puan tbody tr.cikan{background:linear-gradient(90deg,rgba(139,21,26,.07),transparent 70%)}
+  td.p{font-weight:800;color:var(--bordo)}
+  .kral th,.kral td{text-align:left;padding:10px 14px}
+  .kral td.p{font:italic 800 22px/1 var(--f-b)}
+
+  /* Fikstur */
+  .asama{border-bottom:1px solid var(--gri)}
+  .asama summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:12px;padding:16px 2px;font:italic 800 clamp(26px,3vw,36px)/1 var(--f-b)}
+  .asama summary::-webkit-details-marker{display:none}
+  .asama summary::after{content:"+";margin-left:auto;font-style:normal;color:var(--bordo)}
+  .asama[open] summary::after{content:"−"}
+  .asama summary small{font:600 14px var(--f-g);opacity:.6}
+  .maclar{display:grid;gap:6px;padding-bottom:18px}
+  .mac{display:grid;grid-template-columns:150px minmax(0,1fr) 92px minmax(0,1fr);gap:10px;align-items:center;padding:10px 12px;border-radius:var(--k-m);background:var(--acik);font-size:15px}
+  .mac .zaman{font-size:13px;opacity:.7;white-space:nowrap}
+  .mac .ev{text-align:right;font-weight:600}
+  .mac .dep{font-weight:600}
+  .mac .galip{color:var(--bordo);font-weight:800}
+  .mac .skor{text-align:center;font:800 20px/1 var(--f-b);white-space:nowrap}
+  .mac .skor small{display:block;font:600 11px var(--f-g);opacity:.7;margin-top:3px}
+
+  .kapali{max-width:620px;font-weight:500}
+  .kurallar{list-style:decimal;padding-left:1.4em;display:grid;gap:8px;max-width:70ch}
+  .kurallar li::marker{color:var(--bordo);font-weight:700}
+  .ornek{padding-bottom:40px}
+
+  @media(max-width:760px){
+    .sampiyon{grid-template-columns:1fr}
+    .mac{grid-template-columns:minmax(0,1fr) 70px minmax(0,1fr);row-gap:4px}
+    .mac .zaman{grid-column:1/-1}
+  }
+  @media(max-width:420px){
+    .sampiyon dl{grid-template-columns:1fr 1fr}
+    .serit li{padding:6px 10px;font-size:14px}
+  }
+}

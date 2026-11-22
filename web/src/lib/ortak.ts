@@ -5,11 +5,13 @@
 export const MENU: [string, string][] = [
   ["Ana Sayfa", "/"],
   ["Hakkımızda", "/#hakkimizda"],
-  ["Etkinliklerimiz", "/#etkinlikler"],
+  ["Etkinlikler", "/#etkinlikler"],
+  ["Turnuva", "/turnuva"],
+  ["Forma", "/forma"],
+  ["Sahalar", "/sahalar"],
   ["İletişim", "/#iletisim"],
-  ["Köy Sahası", "/koy-sahasi"],
 ];
-// Hakkimizda/Etkinlikler/Iletisim bolumlerini iceren sayfalar (Kale Agi = /, Skorbord)
+// Hakkimizda/Etkinlikler/Iletisim bolumlerini iceren sayfalar (ana sayfa, Skorbord)
 export const BOLUMLU = new Set(["/", "/skorbord"]);
 
 export type Olay = { gun: string; ay: string; kisa: string; hafta: string; ad: string; ust: string; tur: string; yer: string; saat: string };

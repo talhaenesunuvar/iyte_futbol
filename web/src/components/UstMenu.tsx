@@ -38,7 +38,7 @@ export default function UstMenu() {
               return <a key={h} href={sayfaIci} aria-current={h === "/" ? "page" : undefined} onClick={kapat}>{ad}</a>;
             }
             if (hashli) return <a key={h} href={h} onClick={kapat}>{ad}</a>;
-            return <Link key={h} href={h} aria-current={yol === h ? "page" : undefined} onClick={kapat}>{ad}</Link>;
+            return <Link key={h} href={h} aria-current={yol === h || yol.startsWith(h + "/") ? "page" : undefined} onClick={kapat}>{ad}</Link>;
           })}
         </nav>
         <button type="button" aria-expanded={acik} onClick={() => setAcik((a) => !a)}>{acik ? "Kapat" : "Menü"}</button>
