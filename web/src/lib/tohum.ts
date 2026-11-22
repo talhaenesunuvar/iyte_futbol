@@ -24,6 +24,7 @@ export async function tohumla(sql: postgres.Sql) {
   if (!ilk.length) return;
   // Yeni kurulumda tohum zaten guncel bicimde (kadro, asist, 3.luk); eski veriye yonelik gecisler atlanir
   await sql`insert into ayar (anahtar, deger) values ('gecis_v2', 'tohum') on conflict do nothing`;
+  await sql`insert into ayar (anahtar, deger) values ('gecis_v3', 'tohum') on conflict do nothing`;
   for (const [k, v] of Object.entries(VARSAYILAN_AYAR)) {
     await sql`insert into ayar (anahtar, deger) values (${k}, ${v}) on conflict do nothing`;
   }

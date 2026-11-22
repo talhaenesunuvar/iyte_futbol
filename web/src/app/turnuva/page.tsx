@@ -1,4 +1,5 @@
 import type { Metadata, ResolvingMetadata } from "next";
+import Link from "next/link";
 import "./turnuva.css";
 import UstMenu from "@/components/UstMenu";
 import AltKisim from "@/components/AltKisim";
@@ -236,10 +237,11 @@ function MacSatiri({ m, ad, goller }: { m: Mac; ad: Map<number, Takim>; goller: 
     <li className={"mac" + (m.canli ? " canli" : "")}>
       <span className="zaman">{m.canli ? <b className="canli-isaret">CANLI</b> : tarihYaz(m.zaman, true)}{m.grup ? ` · ${m.grup}` : ""}</span>
       <span className={"ev" + (k !== null && k === m.ev_id ? " galip" : "")}><TakimAdi t={tk(m.ev_id)} boy={20} /></span>
-      <span className="skor">
+      {/* Satirin tamami mac sayfasina gider (gerilmis baglanti); paylas dugmesi ustte kalir */}
+      <Link className="skor mac-git" href={`/turnuva/mac/${m.id}`} aria-label={`${tk(m.ev_id)?.ad ?? "?"} – ${tk(m.dep_id)?.ad ?? "?"} maç ayrıntısı`}>
         {oynandi(m) ? `${m.ev_gol} - ${m.dep_gol}` : "–"}
         {m.ev_pen !== null && m.dep_pen !== null && <small>pen. {m.ev_pen}-{m.dep_pen}</small>}
-      </span>
+      </Link>
       <span className={"dep" + (k !== null && k === m.dep_id ? " galip" : "")}><TakimAdi t={tk(m.dep_id)} boy={20} /></span>
       <span className="mac-paylas">{oynandi(m) && m.ev_id !== null && m.dep_id !== null && <PaylasDugmesi yol={`/turnuva/gorsel/mac/${m.id}`} dosya={`mac-${m.id}`} etiket="" sinif="paylas ikon" />}</span>
       {goller.length > 0 && (

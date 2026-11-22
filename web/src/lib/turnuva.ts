@@ -19,7 +19,7 @@ async function turnuvaYukle(sql: postgres.Sql, id: number): Promise<TurnuvaVeris
   const takimlar = await sql<Takim[]>`select id, ad, grup, torba, renk, case when logo is null then null else left(md5(logo), 10) end as logo_v
     from takim where turnuva_id = ${id} order by grup nulls last, torba nulls last, ad`;
   const ham = await sql<(Omit<Mac, "zaman"> & { zaman: Date | null })[]>`
-    select id, asama, grup, sira, ev_id, dep_id, zaman, saha, ev_gol, dep_gol, ev_pen, dep_pen, canli
+    select id, asama, grup, sira, ev_id, dep_id, zaman, saha, ev_gol, dep_gol, ev_pen, dep_pen, canli, hakem
     from mac where turnuva_id = ${id}
     order by case asama when 'grup' then 0 when 'son16' then 1 when 'ceyrek' then 2 when 'yari' then 3 when 'ucuncu' then 4 else 5 end, grup nulls last, sira, id`;
   const maclar: Mac[] = ham.map((m) => ({ ...m, zaman: m.zaman ? new Date(m.zaman).toISOString() : null }));
@@ -51,6 +51,16 @@ export async function turnuvaVerisiIcin(id: number): Promise<TurnuvaVerisi | nul
   cacheTag(ETIKET.turnuva);
   cacheLife("minutes");
   return turnuvaYukle(await db(), id);
+}
+
+// Mac detay sayfasi: macin turnuvasi (onbellekli)
+export async function macTurnuvasi(macId: number): Promise<number | null> {
+  "use cache";
+  cacheTag(ETIKET.turnuva);
+  cacheLife("minutes");
+  const sql = await db();
+  const [r] = await sql<{ turnuva_id: number }[]>`select turnuva_id from mac where id = ${macId}`;
+  return r?.turnuva_id ?? null;
 }
 
 // Takim logosu (data URL). Panel kaydedince ETIKET.turnuva dusurulur.
@@ -117,7 +127,7 @@ export async function basvurular(turnuvaId: number) {
 // Yari finalde ayrica kaybeden 3.luk macina gider.
 export async function ilerlet(sql: postgres.Sql, macId: number) {
   const [m] = await sql<(Omit<Mac, "zaman"> & { turnuva_id: number })[]>`
-    select id, turnuva_id, asama, grup, sira, ev_id, dep_id, saha, ev_gol, dep_gol, ev_pen, dep_pen, canli from mac where id = ${macId}`;
+    select id, turnuva_id, asama, grup, sira, ev_id, dep_id, saha, ev_gol, dep_gol, ev_pen, dep_pen, canli, hakem from mac where id = ${macId}`;
   if (!m) return;
   const mac: Mac = { ...m, zaman: null };
   if (m.asama === "yari") {

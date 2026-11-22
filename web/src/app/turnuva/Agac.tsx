@@ -1,4 +1,5 @@
 import { ASAMA_AD, ELEME, kazanan, oynandi, type Mac, type Takim } from "@/lib/turnuva";
+import Link from "next/link";
 import TakimRozet from "./TakimRozet";
 
 // Eleme agaci: her tur bir sutun, maclar sira numarasina gore. Kendi kabinda yatay kayar
@@ -19,9 +20,11 @@ export default function Agac({ maclar, takimlar }: { maclar: Mac[]; takimlar: Ta
     );
     return (
       <li key={m.id} className={[sinif, m.canli ? "canli" : ""].filter(Boolean).join(" ") || undefined}>
-        {m.canli && <span className="ag-canli">CANLI</span>}
-        {satir(m.ev_id, m.ev_gol, m.ev_pen)}
-        {satir(m.dep_id, m.dep_gol, m.dep_pen)}
+        <Link href={`/turnuva/mac/${m.id}`} className="ag-git" aria-label={`${ASAMA_AD[m.asama]}: ${m.ev_id === null ? "?" : tk.get(m.ev_id)?.ad ?? "?"} – ${m.dep_id === null ? "?" : tk.get(m.dep_id)?.ad ?? "?"}`}>
+          {m.canli && <span className="ag-canli">CANLI</span>}
+          {satir(m.ev_id, m.ev_gol, m.ev_pen)}
+          {satir(m.dep_id, m.dep_gol, m.dep_pen)}
+        </Link>
       </li>
     );
   };

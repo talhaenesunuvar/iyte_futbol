@@ -1,12 +1,21 @@
 import "server-only";
 import type postgres from "postgres";
-import { AD, NUMARALAR, RENKLER, SOYAD, prng } from "./tohum/turnuva";
+import { AD, HAKEMLER, NUMARALAR, RENKLER, SOYAD, prng } from "./tohum/turnuva";
 import { kaybeden, type Mac } from "./turnuva-hesap";
 
 // Tek seferlik veri gecisleri. Sema (sema.ts) her acilista IF NOT EXISTS ile calisir; burasi ise mevcut
 // veriyi yeni ozelliklere tasir. Her gecis ayar tablosundaki anahtarla bir kez calisir (paralel acilista yalnizca biri).
 export async function gecisler(sql: postgres.Sql) {
   await gecisV2(sql);
+  await gecisV3(sql);
+}
+
+// V3 (2026-11-22): ornek turnuvanin hakemsiz maclarina ornek hakem adi. Gercek turnuvalara dokunmaz.
+async function gecisV3(sql: postgres.Sql) {
+  const ilk = await sql`insert into ayar (anahtar, deger) values ('gecis_v3', now()::text) on conflict do nothing returning anahtar`;
+  if (!ilk.length) return;
+  const maclar = await sql<{ id: number }[]>`select m.id from mac m join turnuva t on t.id = m.turnuva_id where t.ornek and m.hakem = '' order by m.id`;
+  for (const [i, m] of maclar.entries()) await sql`update mac set hakem = ${HAKEMLER[(i * 7 + 3) % HAKEMLER.length]} where id = ${m.id}`;
 }
 
 // V2 (2026-11-22): canli DB'deki ORNEK turnuvaya (ornek = true) renk, kadro, asist ve 3.luk maci ekler.
@@ -63,7 +72,7 @@ async function ornekTurnuvayiGuncelle(sql: postgres.Sql, tid: number) {
   const [var_] = await sql`select 1 from mac where turnuva_id = ${tid} and asama = 'ucuncu'`;
   if (var_) return;
   const yari = await sql<(Omit<Mac, "zaman">)[]>`
-    select id, asama, grup, sira, ev_id, dep_id, saha, ev_gol, dep_gol, ev_pen, dep_pen, canli from mac where turnuva_id = ${tid} and asama = 'yari' order by sira`;
+    select id, asama, grup, sira, ev_id, dep_id, saha, ev_gol, dep_gol, ev_pen, dep_pen, canli, hakem from mac where turnuva_id = ${tid} and asama = 'yari' order by sira`;
   if (yari.length !== 2) return;
   const [ev, dep] = yari.map((m) => kaybeden({ ...m, zaman: null }));
   const [fin] = await sql<{ zaman: Date | null }[]>`select zaman from mac where turnuva_id = ${tid} and asama = 'final'`;

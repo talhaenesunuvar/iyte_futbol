@@ -1,0 +1,36 @@
+/* Mac detayi. turnuva.css'in (.t-tur) rozet, paylas ve canli siniflarini kullanir; kendi kurallari .t-mac altinda. */
+.t-mac {
+  .mac-bekle{padding-block:120px;opacity:.6}
+  .mac-ust{padding-block:clamp(28px,6vw,64px) clamp(28px,4vw,44px);display:grid;gap:18px;justify-items:start}
+  .mac-geri{text-decoration:none;font-weight:600;font-size:15px;opacity:.75}
+  .mac-geri:hover{opacity:1;color:var(--bordo)}
+  .skorbord{width:100%;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:clamp(10px,3vw,40px);padding:clamp(20px,4vw,40px);border-radius:var(--k-xl);background:var(--karbon);color:#fff}
+  .taraf{display:grid;justify-items:center;gap:10px;text-align:center;min-width:0}
+  .taraf span{font:italic 800 clamp(20px,3.2vw,38px)/1.05 var(--f-b);overflow-wrap:anywhere;opacity:.75}
+  .taraf.galip span{opacity:1}
+  .taraf .tk-rozet{box-shadow:0 0 0 3px rgba(255,255,255,.12)}
+  .sk{display:grid;justify-items:center;gap:6px}
+  .sk strong{font:italic 800 clamp(48px,9vw,110px)/.9 var(--f-b);white-space:nowrap}
+  .sk small{font-size:14px;opacity:.75;white-space:nowrap}
+  .mac-bilgi{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0}
+  .mac-bilgi div{border:2px solid var(--gri);border-radius:var(--k-l);padding:12px 16px;min-width:0}
+  .mac-bilgi dt{font:700 12px/1 var(--f-g);letter-spacing:.12em;text-transform:uppercase;color:var(--bordo);margin-bottom:6px}
+  .mac-bilgi dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+  .mac-goller-b{padding-bottom:clamp(56px,9vw,110px)}
+  .gol-iki{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .gol-l{border:2px solid var(--gri);border-radius:var(--k-l);padding:16px 18px;min-width:0}
+  .gol-l h3{display:flex;align-items:center;gap:8px;font:700 18px/1.2 var(--f-g);margin-bottom:10px}
+  .gol-l h3 b{margin-left:auto;font:italic 800 26px/1 var(--f-b);color:var(--bordo)}
+  .gol-l ol{display:grid;gap:8px}
+  .gol-l li{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:baseline;padding-top:8px;border-top:1px solid var(--acik)}
+  .gol-l .dk{font:italic 800 20px/1 var(--f-b);color:var(--bordo)}
+  .gol-l strong{display:block;font-weight:700}
+  .gol-l small{display:block;font-size:14px;opacity:.7}
+  .gol-l .y{opacity:.6;font-size:15px}
+  @media(max-width:700px){
+    .mac-bilgi{grid-template-columns:1fr}
+    .gol-iki{grid-template-columns:1fr}
+    .skorbord{padding:18px 12px}
+    .taraf .tk-rozet{width:44px!important;height:44px!important}
+  }
+}

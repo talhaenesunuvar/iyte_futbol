@@ -213,6 +213,7 @@ export async function macKaydetAction(f: FormData) {
   const zaman = zamanS ? yereldenIso(zamanS) : null;
   if (zamanS && !zaman) geri(tid, "Tarih-saat geçersiz.", `mac-${id}`);
   const saha = metin(f, "saha", 60);
+  const hakem = metin(f, "hakem", 60);
   let ev = skor(f, "ev_gol"), dep = skor(f, "dep_gol");
   if (ev === null || dep === null) { ev = null; dep = null; }
   let evp = skor(f, "ev_pen"), depp = skor(f, "dep_pen");
@@ -228,7 +229,7 @@ export async function macKaydetAction(f: FormData) {
     if (evId !== null && evId === depId) geri(tid, "Bir takım kendisiyle oynayamaz.", `mac-${id}`);
   }
   if (m.asama !== "grup" && ev !== null && ev === dep && evp === null) geri(tid, "Eleme maçında beraberlikte penaltı sonucu gerekli.", `mac-${id}`);
-  await sql`update mac set zaman = ${zaman}, saha = ${saha}, ev_id = ${evId}, dep_id = ${depId},
+  await sql`update mac set zaman = ${zaman}, saha = ${saha}, hakem = ${hakem}, ev_id = ${evId}, dep_id = ${depId},
     ev_gol = ${ev}, dep_gol = ${dep}, ev_pen = ${evp}, dep_pen = ${depp} where id = ${id}`;
   if (m.asama !== "grup") await ilerlet(sql, id);
   bitir(ETIKET.turnuva);

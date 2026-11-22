@@ -275,6 +275,7 @@ function MacKarti({ m, T, takimlar, oyuncular, goller }: { m: Mac; T: number; ta
         )}
         <label>Tarih-saat<input name="zaman" type="datetime-local" defaultValue={yerelDeger(m.zaman)} /></label>
         <label>Saha<input name="saha" defaultValue={m.saha} maxLength={60} /></label>
+        <label>Hakem<input name="hakem" defaultValue={m.hakem} maxLength={60} placeholder="Ad Soyad" /></label>
         <label>Skor
           <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
             <input name="ev_gol" type="number" min={0} max={99} defaultValue={m.ev_gol ?? ""} aria-label="Ev golü" style={{ width: 64 }} />–

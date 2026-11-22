@@ -38,6 +38,9 @@ export function prng(tohum: number) {
   };
 }
 
+// Ornek hakemler (gecis v3 de kullanir)
+export const HAKEMLER = ["Serkan Aydın", "Murat Kılıç", "Elif Doğan", "Burak Şahin", "Ozan Yurt", "Deniz Acar"];
+
 export async function tohumTurnuva(sql: postgres.Sql) {
   const r = prng(2026);
   const sec = <T,>(l: T[]) => l[Math.floor(r() * l.length)];
@@ -73,6 +76,7 @@ export async function tohumTurnuva(sql: postgres.Sql) {
   };
 
   type Yeni = Omit<Mac, "id"> & { turnuva_id: number };
+  const hakem = () => HAKEMLER[Math.floor(r() * HAKEMLER.length)];
   const maclar: Yeni[] = [];
   const goller: { anahtar: string; takim_id: number; oyuncu: string; asist: string; dakika: number }[] = [];
   const anahtar = (m: { asama: string; grup: string | null; sira: number }) => `${m.asama}|${m.grup ?? ""}|${m.sira}`;
@@ -90,7 +94,7 @@ export async function tohumTurnuva(sql: postgres.Sql) {
       const m: Yeni = {
         turnuva_id: tid, asama: "grup", grup: g, sira: i + 1, ev_id: ev, dep_id: dep,
         zaman: zaman(2 + Math.floor(i / 2) * 4 + (gi % 4), 17 + (gi % 2) * 2 + (i % 2)), saha: "Kampüs sahası",
-        ev_gol: golSay(), dep_gol: golSay(), ev_pen: null, dep_pen: null, canli: false,
+        ev_gol: golSay(), dep_gol: golSay(), ev_pen: null, dep_pen: null, canli: false, hakem: hakem(),
       };
       golYaz(m);
       maclar.push(m);
@@ -117,7 +121,7 @@ export async function tohumTurnuva(sql: postgres.Sql) {
       const m: Yeni = {
         turnuva_id: tid, asama, grup: null, sira, ev_id: ev, dep_id: dep,
         zaman: zaman(gunler[asama][i], asama === "final" ? 20 : 17 + (i % 4)), saha: "Kampüs sahası",
-        ev_gol: eg, dep_gol: dg, ev_pen: null, dep_pen: null, canli: false,
+        ev_gol: eg, dep_gol: dg, ev_pen: null, dep_pen: null, canli: false, hakem: hakem(),
       };
       if (eg === dg) { m.ev_pen = asama === "final" ? 5 : 3; m.dep_pen = asama === "final" ? 4 : 5; }
       golYaz(m);
@@ -129,7 +133,7 @@ export async function tohumTurnuva(sql: postgres.Sql) {
     if (asama === "yari" && yariKaybeden.length === 2) {
       const u: Yeni = {
         turnuva_id: tid, asama: "ucuncu", grup: null, sira: 1, ev_id: yariKaybeden[0], dep_id: yariKaybeden[1],
-        zaman: zaman(21, 17), saha: "Kampüs sahası", ev_gol: 2, dep_gol: 1, ev_pen: null, dep_pen: null, canli: false,
+        zaman: zaman(21, 17), saha: "Kampüs sahası", ev_gol: 2, dep_gol: 1, ev_pen: null, dep_pen: null, canli: false, hakem: hakem(),
       };
       golYaz(u);
       maclar.push(u);
@@ -140,7 +144,7 @@ export async function tohumTurnuva(sql: postgres.Sql) {
   }
 
   const eklenen = await sql<{ id: number; asama: string; grup: string | null; sira: number }[]>`
-    insert into mac ${sql(maclar, "turnuva_id", "asama", "grup", "sira", "ev_id", "dep_id", "zaman", "saha", "ev_gol", "dep_gol", "ev_pen", "dep_pen")}
+    insert into mac ${sql(maclar, "turnuva_id", "asama", "grup", "sira", "ev_id", "dep_id", "zaman", "saha", "ev_gol", "dep_gol", "ev_pen", "dep_pen", "hakem")}
     returning id, asama, grup, sira`;
   const idBul = new Map(eklenen.map((m) => [anahtar(m), m.id]));
   const golSatir = goller.map((g) => ({

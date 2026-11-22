@@ -14,7 +14,7 @@ export type Oyuncu = { id: number; takim_id: number; ad: string; numara: number 
 export type Mac = {
   id: number; asama: Asama; grup: string | null; sira: number;
   ev_id: number | null; dep_id: number | null; zaman: string | null; saha: string;
-  ev_gol: number | null; dep_gol: number | null; ev_pen: number | null; dep_pen: number | null; canli: boolean;
+  ev_gol: number | null; dep_gol: number | null; ev_pen: number | null; dep_pen: number | null; canli: boolean; hakem: string;
 };
 export type Gol = { id: number; mac_id: number; takim_id: number; oyuncu: string; oyuncu_id: number | null; asist: string; asist_id: number | null; dakika: number | null };
 

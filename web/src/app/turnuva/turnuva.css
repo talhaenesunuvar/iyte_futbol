@@ -166,4 +166,13 @@
 }
 
 /* Canli isaret nabzi (keyframes ic ice yazilamaz) */
-@keyframes nabiz{50%{opacity:.25;transform:scale(.8)}}
+@keyframes nabiz{50%{opacity:.25;transform:scale(.8)}
+  /* Mac sayfasina baglantilar (2026-11-22): fikstur satiri gerilmis baglanti, agac karti tumuyle baglanti */
+  .mac{position:relative}
+  .mac-git{text-decoration:none;color:inherit}
+  .mac-git::after{content:"";position:absolute;inset:0;border-radius:inherit}
+  .mac:hover{background:var(--acik)}
+  .mac-paylas{position:relative;z-index:1}
+  .ag-git{display:block;text-decoration:none;color:inherit;border-radius:inherit}
+  .agac li:has(.ag-git:hover){border-color:var(--karbon)}
+}

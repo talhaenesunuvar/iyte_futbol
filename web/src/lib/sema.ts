@@ -150,4 +150,6 @@ alter table gol add column if not exists oyuncu_id int references oyuncu(id) on 
 alter table gol add column if not exists asist text not null default '';
 alter table gol add column if not exists asist_id int references oyuncu(id) on delete set null;
 alter table mac add column if not exists canli boolean not null default false;
+-- V3 (2026-11-22, Derin): mac hakemi
+alter table mac add column if not exists hakem text not null default '';
 `;
