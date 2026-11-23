@@ -147,6 +147,17 @@
   .kadro .ist{display:flex;gap:6px;font-size:12px}
   .kadro .ist b,.kadro .ist i{font-style:normal;padding:2px 7px;border-radius:999px;background:var(--acik);font-weight:700}
   .kadro .ist b{background:var(--bordo);color:var(--beyaz)}
+  .kadro .ist{align-items:center}
+  .kadro .yas{font-size:13px;opacity:.6;font-weight:600}
+  .kart-s{display:inline-grid;place-items:center;min-width:16px;height:20px;padding:0 4px;border-radius:3px;font:800 11px/1 var(--f-g)}
+  .kart-s.sari{background:#F2C200;color:#1A1A1A}
+  .kart-s.kirmizi{background:#C62828;color:#fff}
+  .kadro-git{display:block;margin:0 14px 12px;padding:10px 12px;border-radius:var(--k-m);background:var(--acik);font-weight:700;text-decoration:none;text-align:center}
+  .kadro-git:hover{background:var(--karbon);color:var(--beyaz)}
+  /* Takim/oyuncu baglantilari: gorunum ayni kalsin, ustune gelince belli olsun */
+  .tk-bag{color:inherit;text-decoration:none;min-width:0}
+  .tk-bag:hover{color:var(--bordo);text-decoration:underline}
+  .puan .takim .tk-bag{display:inline-flex;vertical-align:middle;max-width:calc(100% - 1.6em)}
   @media(prefers-reduced-motion:reduce){.canli-isaret::before{animation:none}}
 
   @media(max-width:760px){

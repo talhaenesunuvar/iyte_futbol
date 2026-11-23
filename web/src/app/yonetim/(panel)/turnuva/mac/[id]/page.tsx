@@ -46,6 +46,7 @@ export default async function CanliMac({ params, searchParams }: Props) {
           evKadro={v.oyuncular.filter((o) => o.takim_id === ev.id)}
           depKadro={v.oyuncular.filter((o) => o.takim_id === dep.id)}
           goller={v.goller.filter((g) => g.mac_id === m.id)}
+          kartlar={v.kartlar.filter((x) => x.mac_id === m.id)}
         />
       )}
     </>

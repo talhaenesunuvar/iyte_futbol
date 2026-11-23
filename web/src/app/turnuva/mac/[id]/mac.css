@@ -8,6 +8,14 @@
   .taraf{display:grid;justify-items:center;gap:10px;text-align:center;min-width:0}
   .taraf span{font:italic 800 clamp(20px,3.2vw,38px)/1.05 var(--f-b);overflow-wrap:anywhere;opacity:.75}
   .taraf.galip span{opacity:1}
+  .taraf .taraf-ad{font:italic 800 clamp(20px,3.2vw,38px)/1.05 var(--f-b);overflow-wrap:anywhere;opacity:.75;color:inherit;text-decoration:none}
+  .taraf.galip .taraf-ad{opacity:1}
+  .taraf .taraf-ad:hover{text-decoration:underline}
+  .gol-l a{color:inherit;text-decoration:none}
+  .gol-l a:hover{color:var(--bordo);text-decoration:underline}
+  .kart-i{display:inline-block;width:11px;height:15px;border-radius:2px;vertical-align:-2px}
+  .kart-i.sari{background:#F2C200}
+  .kart-i.kirmizi{background:#C62828}
   .taraf .tk-rozet{box-shadow:0 0 0 3px rgba(255,255,255,.12)}
   .sk{display:grid;justify-items:center;gap:6px}
   .sk strong{font:italic 800 clamp(48px,9vw,110px)/.9 var(--f-b);white-space:nowrap}

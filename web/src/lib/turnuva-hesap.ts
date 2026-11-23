@@ -10,7 +10,11 @@ export type Turnuva = {
 };
 // logo_v: logonun kisa ozeti (surum); gorsel /turnuva/logo/[id]?v=... adresinden gelir. renk: #RRGGBB
 export type Takim = { id: number; ad: string; grup: string | null; torba: number | null; logo_v: string | null; renk: string | null };
-export type Oyuncu = { id: number; takim_id: number; ad: string; numara: number | null };
+// Herkese acik oyuncu alanlari. bolum ve ogrenci_no BURADA YOK: yalniz panel `oyuncuGizli` ile okur.
+export type Oyuncu = { id: number; takim_id: number; ad: string; numara: number | null; yas: number | null };
+export type OyuncuGizli = { id: number; bolum: string; ogrenci_no: string };
+export type KartRenk = "sari" | "kirmizi";
+export type Kart = { id: number; mac_id: number; takim_id: number; oyuncu: string; oyuncu_id: number | null; renk: KartRenk; dakika: number | null };
 export type Mac = {
   id: number; asama: Asama; grup: string | null; sira: number;
   ev_id: number | null; dep_id: number | null; zaman: string | null; saha: string;
@@ -101,6 +105,26 @@ export function asistKralligi(goller: Gol[], takimlar: Takim[]): AsistKrali[] {
     say.set(k, v);
   }
   return [...say.values()].sort((a, b) => b.asist - a.asist || a.oyuncu.localeCompare(b.oyuncu, "tr"));
+}
+
+// Oyuncu istatistigi: kayit oyuncu_id ile bagliysa id'den, eski/serbest kayitlarda ayni takimda ayni addan eslesir
+const ayniOyuncu = (o: Oyuncu, takimId: number, id: number | null, isim: string) =>
+  id !== null ? id === o.id : takimId === o.takim_id && isim.toLocaleLowerCase("tr") === o.ad.toLocaleLowerCase("tr");
+export type OyuncuIstatistik = { gol: number; asist: number; sari: number; kirmizi: number; golKayit: Gol[]; asistKayit: Gol[]; kartKayit: Kart[] };
+export function oyuncuIstatistik(o: Oyuncu, goller: Gol[], kartlar: Kart[]): OyuncuIstatistik {
+  const golKayit = goller.filter((g) => ayniOyuncu(o, g.takim_id, g.oyuncu_id, g.oyuncu));
+  const asistKayit = goller.filter((g) => !!g.asist && ayniOyuncu(o, g.takim_id, g.asist_id, g.asist));
+  const kartKayit = kartlar.filter((k) => ayniOyuncu(o, k.takim_id, k.oyuncu_id, k.oyuncu));
+  return {
+    gol: golKayit.length, asist: asistKayit.length,
+    sari: kartKayit.filter((k) => k.renk === "sari").length, kirmizi: kartKayit.filter((k) => k.renk === "kirmizi").length,
+    golKayit, asistKayit, kartKayit,
+  };
+}
+// Kralliklarda oyuncu sayfasina baglanti icin: takim + ad -> oyuncu id
+export function oyuncuBul(oyuncular: Oyuncu[], takimId: number | undefined, isim: string) {
+  const a = isim.toLocaleLowerCase("tr");
+  return oyuncular.find((o) => o.takim_id === takimId && o.ad.toLocaleLowerCase("tr") === a);
 }
 
 // Takim rozeti: bas harfler ve okunur yazi rengi

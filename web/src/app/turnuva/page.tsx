@@ -5,8 +5,8 @@ import UstMenu from "@/components/UstMenu";
 import AltKisim from "@/components/AltKisim";
 import { OG_BASE, SITE_AD } from "@/lib/site";
 import {
-  ASAMA_AD, DURUM_AD, SIRALI_ASAMA, asistKralligi, golKralligi, kazanan, oynandi, puanDurumu, tarihYaz, turnuvaVerisi,
-  type Gol, type Mac, type Oyuncu, type Takim,
+  ASAMA_AD, DURUM_AD, SIRALI_ASAMA, asistKralligi, golKralligi, kazanan, oynandi, oyuncuBul, oyuncuIstatistik, puanDurumu, tarihYaz, turnuvaVerisi,
+  type Gol, type Kart, type Mac, type Oyuncu, type Takim,
 } from "@/lib/turnuva";
 import Agac from "./Agac";
 import BasvuruFormu from "./BasvuruFormu";
@@ -50,7 +50,7 @@ function Bos() {
 type V = NonNullable<Awaited<ReturnType<typeof turnuvaVerisi>>>;
 
 function Icerik({ v }: { v: V }) {
-  const { turnuva: t, takimlar, maclar, goller, oyuncular } = v;
+  const { turnuva: t, takimlar, maclar, goller, oyuncular, kartlar } = v;
   const ad = new Map(takimlar.map((k) => [k.id, k]));
   const puan = puanDurumu(takimlar, maclar);
   const kral = golKralligi(goller, takimlar).slice(0, 10);
@@ -155,7 +155,7 @@ function Icerik({ v }: { v: V }) {
                   <tbody>
                     {satirlar.map((s, i) => (
                       <tr key={s.takim.id} className={i < 2 ? "cikan" : undefined}>
-                        <th scope="row" className="takim"><span className="no">{i + 1}</span><TakimAdi t={s.takim} boy={20} /></th>
+                        <th scope="row" className="takim"><span className="no">{i + 1}</span><Link className="tk-bag" href={`/turnuva/takim/${s.takim.id}`}><TakimAdi t={s.takim} boy={20} /></Link></th>
                         <td>{s.O}</td><td>{s.G}</td><td>{s.B}</td><td>{s.M}</td><td>{s.AG}</td><td>{s.YG}</td>
                         <td>{s.AV > 0 ? `+${s.AV}` : s.AV}</td><td className="p">{s.P}</td>
                       </tr>
@@ -186,8 +186,8 @@ function Icerik({ v }: { v: V }) {
         <section className="s-bolum kap" id="gol-kralligi">
           <h2>Krallıklar</h2>
           <div className="kralliklar">
-            <KralTablo baslik="Gol krallığı" birim="Gol" satirlar={kral.map((k) => ({ oyuncu: k.oyuncu, takim: k.takim, n: k.gol }))} takimlar={takimlar} />
-            {asist.length > 0 && <KralTablo baslik="Asist krallığı" birim="Asist" satirlar={asist.map((k) => ({ oyuncu: k.oyuncu, takim: k.takim, n: k.asist }))} takimlar={takimlar} />}
+            <KralTablo baslik="Gol krallığı" birim="Gol" satirlar={kral.map((k) => ({ oyuncu: k.oyuncu, takim: k.takim, n: k.gol }))} takimlar={takimlar} oyuncular={oyuncular} />
+            {asist.length > 0 && <KralTablo baslik="Asist krallığı" birim="Asist" satirlar={asist.map((k) => ({ oyuncu: k.oyuncu, takim: k.takim, n: k.asist }))} takimlar={takimlar} oyuncular={oyuncular} />}
           </div>
         </section>
       )}
@@ -195,10 +195,10 @@ function Icerik({ v }: { v: V }) {
       {oyuncular.length > 0 && (
         <section className="s-bolum kap" id="kadrolar">
           <h2>Kadrolar</h2>
-          <p className="s-aciklama">Takıma dokun, kadrosu açılsın. Gol ve asistler turnuva toplamıdır.</p>
+          <p className="s-aciklama">Takıma dokun, kadrosu açılsın; oyuncuya dokun, gol, asist, kart ve yaşını gör. Sayılar turnuva toplamıdır.</p>
           <div className="kadrolar">
             {takimlar.filter((k) => oyuncular.some((o) => o.takim_id === k.id)).map((k) => (
-              <Kadro key={k.id} takim={k} oyuncular={oyuncular.filter((o) => o.takim_id === k.id)} goller={goller.filter((g) => g.takim_id === k.id)} />
+              <Kadro key={k.id} takim={k} oyuncular={oyuncular.filter((o) => o.takim_id === k.id)} goller={goller.filter((g) => g.takim_id === k.id)} kartlar={kartlar.filter((x) => x.takim_id === k.id)} />
             ))}
           </div>
         </section>
@@ -251,8 +251,12 @@ function MacSatiri({ m, ad, goller }: { m: Mac; ad: Map<number, Takim>; goller: 
   );
 }
 
-function KralTablo({ baslik, birim, satirlar, takimlar }: { baslik: string; birim: string; satirlar: { oyuncu: string; takim: string; n: number }[]; takimlar: Takim[] }) {
+function KralTablo({ baslik, birim, satirlar, takimlar, oyuncular }: { baslik: string; birim: string; satirlar: { oyuncu: string; takim: string; n: number }[]; takimlar: Takim[]; oyuncular: Oyuncu[] }) {
   const tk = new Map(takimlar.map((t) => [t.ad, t]));
+  const isim = (ad: string, takim: string) => {
+    const o = oyuncuBul(oyuncular, tk.get(takim)?.id, ad);
+    return o ? <Link className="tk-bag" href={`/turnuva/oyuncu/${o.id}`}>{ad}</Link> : ad;
+  };
   return (
     <div className="tablo-kap">
       <table className="kral">
@@ -261,7 +265,7 @@ function KralTablo({ baslik, birim, satirlar, takimlar }: { baslik: string; biri
         <tbody>
           {satirlar.map((k, i) => (
             <tr key={k.oyuncu + k.takim}>
-              <td>{i + 1}</td><th scope="row">{k.oyuncu}</th><td><TakimAdi t={tk.get(k.takim)} boy={18} /></td><td className="p">{k.n}</td>
+              <td>{i + 1}</td><th scope="row">{isim(k.oyuncu, k.takim)}</th><td>{tk.get(k.takim) ? <Link className="tk-bag" href={`/turnuva/takim/${tk.get(k.takim)!.id}`}><TakimAdi t={tk.get(k.takim)} boy={18} /></Link> : <TakimAdi t={undefined} bos={k.takim} boy={18} />}</td><td className="p">{k.n}</td>
             </tr>
           ))}
         </tbody>
@@ -270,24 +274,27 @@ function KralTablo({ baslik, birim, satirlar, takimlar }: { baslik: string; biri
   );
 }
 
-function Kadro({ takim, oyuncular, goller }: { takim: Takim; oyuncular: Oyuncu[]; goller: Gol[] }) {
-  const ayni = (o: Oyuncu, id: number | null, isim: string) => (id !== null ? id === o.id : isim.toLocaleLowerCase("tr") === o.ad.toLocaleLowerCase("tr"));
+function Kadro({ takim, oyuncular, goller, kartlar }: { takim: Takim; oyuncular: Oyuncu[]; goller: Gol[]; kartlar: Kart[] }) {
   return (
     <details className="kadro">
       <summary><TakimAdi t={takim} boy={26} /><small>{oyuncular.length} oyuncu</small></summary>
       <ol>
         {oyuncular.map((o) => {
-          const gol = goller.filter((g) => ayni(o, g.oyuncu_id, g.oyuncu)).length;
-          const as = goller.filter((g) => g.asist && ayni(o, g.asist_id, g.asist)).length;
+          const i = oyuncuIstatistik(o, goller, kartlar);
           return (
             <li key={o.id}>
               <span className="no">{o.numara ?? "–"}</span>
-              <span className="ad">{o.ad}</span>
-              <span className="ist">{gol > 0 && <b>{gol} gol</b>}{as > 0 && <i>{as} asist</i>}</span>
+              <Link className="ad tk-bag" href={`/turnuva/oyuncu/${o.id}`}>{o.ad}{o.yas !== null && <small className="yas"> · {o.yas}</small>}</Link>
+              <span className="ist">
+                {i.gol > 0 && <b>{i.gol} gol</b>}{i.asist > 0 && <i>{i.asist} asist</i>}
+                {i.sari > 0 && <span className="kart-s sari" title="Sarı kart">{i.sari}</span>}
+                {i.kirmizi > 0 && <span className="kart-s kirmizi" title="Kırmızı kart">{i.kirmizi}</span>}
+              </span>
             </li>
           );
         })}
       </ol>
+      <Link className="kadro-git" href={`/turnuva/takim/${takim.id}`}>Takım sayfası →</Link>
     </details>
   );
 }

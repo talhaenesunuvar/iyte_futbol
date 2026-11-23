@@ -152,4 +152,19 @@ alter table gol add column if not exists asist_id int references oyuncu(id) on d
 alter table mac add column if not exists canli boolean not null default false;
 -- V3 (2026-11-22, Derin): mac hakemi
 alter table mac add column if not exists hakem text not null default '';
+-- V4 (2026-11-23, Derin): oyuncu yasi + yalniz yonetimin gordugu bolum/ogrenci no; sari/kirmizi kartlar
+alter table oyuncu add column if not exists yas int;
+alter table oyuncu add column if not exists bolum text not null default '';
+alter table oyuncu add column if not exists ogrenci_no text not null default '';
+-- renk: sari | kirmizi
+create table if not exists kart (
+  id serial primary key,
+  mac_id int not null references mac(id) on delete cascade,
+  takim_id int not null references takim(id) on delete cascade,
+  oyuncu text not null,
+  oyuncu_id int references oyuncu(id) on delete set null,
+  renk text not null,
+  dakika int
+);
+create index if not exists kart_mac on kart (mac_id);
 `;

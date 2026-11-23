@@ -108,3 +108,7 @@
 .t-yon .y-taraf input{position:absolute;opacity:0;pointer-events:none}
 .t-yon .y-taraf label:has(input:checked){border-color:var(--bordo);background:var(--bordo);color:#fff}
 .t-yon .y-gol-btn{min-height:56px;font-size:20px}
+.t-yon .y-kart-dugme{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.t-yon .y-kart-btn{min-height:56px;font-size:18px;border:0}
+.t-yon .y-kart-btn.sari{background:#F2C200;color:#1A1A1A}
+.t-yon .y-kart-btn.kirmizi{background:#C62828;color:#fff}

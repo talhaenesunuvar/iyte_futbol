@@ -1,0 +1,40 @@
+/* Takim ve oyuncu sayfalari (2026-11-23, Derin). turnuva.css'in (.t-tur) rozet/tablo siniflarini kullanir; kendi kurallari .t-ekip altinda. */
+.t-ekip {
+  .ek-bekle{padding-block:120px;opacity:.6}
+  .ek-ust{padding-block:clamp(28px,6vw,64px) clamp(20px,3vw,32px);display:grid;gap:18px;justify-items:start}
+  .ek-geri{text-decoration:none;font-weight:600;font-size:15px;opacity:.75}
+  .ek-geri:hover{opacity:1;color:var(--bordo)}
+  .ek-kart{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:clamp(14px,3vw,32px);padding:clamp(20px,4vw,40px);border-radius:var(--k-xl);background:var(--karbon);color:#fff}
+  .ek-kart h1{font:italic 800 clamp(34px,6vw,72px)/.95 var(--f-b);overflow-wrap:anywhere;margin:0}
+  .ek-kart .ek-alt{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-weight:600;opacity:.85}
+  .ek-kart .ek-alt a{color:inherit}
+  .ek-kart .tk-rozet{box-shadow:0 0 0 3px rgba(255,255,255,.12)}
+  .ek-no{display:grid;place-items:center;width:clamp(72px,12vw,120px);aspect-ratio:1;border-radius:var(--k-l);background:var(--bordo);font:italic 800 clamp(40px,7vw,72px)/1 var(--f-b)}
+  .ek-sayi{width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:0}
+  .ek-sayi div{border:2px solid var(--gri);border-radius:var(--k-l);padding:12px 16px}
+  .ek-sayi dt{font:700 12px/1 var(--f-g);letter-spacing:.12em;text-transform:uppercase;color:var(--bordo);margin-bottom:6px}
+  .ek-sayi dd{margin:0;font:italic 800 34px/1 var(--f-b)}
+  .ek-bolum{padding-bottom:clamp(28px,5vw,48px)}
+  .ek-bolum:last-of-type{padding-bottom:clamp(56px,9vw,110px)}
+  .ek-tablo th,.ek-tablo td{padding:10px 10px}
+  .ek-tablo .ad{text-align:left}
+  .ek-tablo .ad a{font-weight:700;text-decoration:none}
+  .ek-tablo .ad a:hover{color:var(--bordo);text-decoration:underline}
+  .ek-tablo .no{font:800 17px/1 var(--f-b);color:var(--bordo)}
+  .ek-tablo td.p{font:italic 800 20px/1 var(--f-b)}
+  .ek-tablo td.s{color:rgba(26,26,26,.35)}
+  .kart-i{display:inline-block;width:11px;height:15px;border-radius:2px;vertical-align:-2px}
+  .kart-i.sari{background:#F2C200}
+  .kart-i.kirmizi{background:#C62828}
+  .ek-liste{display:grid;gap:8px}
+  .ek-liste li a{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border-radius:var(--k-m);background:var(--acik);text-decoration:none;color:inherit}
+  .ek-liste li a:hover{outline:2px solid var(--karbon)}
+  .ek-liste .dk{font:italic 800 20px/1 var(--f-b);color:var(--bordo)}
+  .ek-liste .sag{font-weight:700;white-space:nowrap}
+  .ek-liste small{display:block;font-size:13px;opacity:.65}
+  .ek-bos{opacity:.65}
+  @media(max-width:700px){
+    .ek-kart{grid-template-columns:1fr;justify-items:start}
+    .ek-tablo .gizle-m{display:none}
+  }
+}

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import type { Gol, Mac, Oyuncu, Takim } from "@/lib/turnuva-hesap";
-import { canliAction, golEkleAction, golSilAction } from "../../islemler";
+import type { Gol, Kart, Mac, Oyuncu, Takim } from "@/lib/turnuva-hesap";
+import { canliAction, golEkleAction, golSilAction, kartEkleAction, kartSilAction } from "../../islemler";
 
-type P = { m: Mac; T: number; ev: Takim; dep: Takim; evKadro: Oyuncu[]; depKadro: Oyuncu[]; goller: Gol[] };
+type P = { m: Mac; T: number; ev: Takim; dep: Takim; evKadro: Oyuncu[]; depKadro: Oyuncu[]; goller: Gol[]; kartlar: Kart[] };
 
-export default function CanliPanel({ m, T, ev, dep, evKadro, depKadro, goller }: P) {
+export default function CanliPanel({ m, T, ev, dep, evKadro, depKadro, goller, kartlar }: P) {
   const [taraf, setTaraf] = useState<"ev" | "dep">("ev");
   const [kim, setKim] = useState("");
   const takim = taraf === "ev" ? ev : dep;
@@ -16,6 +16,13 @@ export default function CanliPanel({ m, T, ev, dep, evKadro, depKadro, goller }:
   const evGol = m.ev_gol ?? 0, depGol = m.dep_gol ?? 0;
   const don = `/yonetim/turnuva/mac/${m.id}`;
   const son = goller.at(-1);
+  const sonKart = kartlar.at(-1);
+  const [kTaraf, setKTaraf] = useState<"ev" | "dep">("ev");
+  const [kKim, setKKim] = useState("");
+  const kTakim = kTaraf === "ev" ? ev : dep;
+  const kKadro = kTaraf === "ev" ? evKadro : depKadro;
+  const kDiger = `t:${kTakim.id}`;
+  const kSecili = kKim && (kKim === kDiger || kKadro.some((o) => `o:${o.id}` === kKim)) ? kKim : kKadro[0] ? `o:${kKadro[0].id}` : kDiger;
   const berabereEleme = m.asama !== "grup" && evGol === depGol;
   const gizli = (
     <>
@@ -89,6 +96,52 @@ export default function CanliPanel({ m, T, ev, dep, evKadro, depKadro, goller }:
           <form action={golSilAction}>
             <input type="hidden" name="id" value={son.id} /><input type="hidden" name="turnuva_id" value={T} />
             <button className="y-btn tehlike" type="submit">Son golü geri al</button>
+          </form>
+        )}
+      </section>
+
+      {m.canli && (
+        <section className="y-kart">
+          <h2>Kart gir</h2>
+          <form action={kartEkleAction} className="y-form" key={`k${kartlar.length}`}>
+            {gizli}<input type="hidden" name="mac_id" value={m.id} />
+            <div className="y-taraf" role="radiogroup" aria-label="Kartı gören takım">
+              <label><input type="radio" name="kart_taraf" checked={kTaraf === "ev"} onChange={() => { setKTaraf("ev"); setKKim(""); }} />{ev.ad}</label>
+              <label><input type="radio" name="kart_taraf" checked={kTaraf === "dep"} onChange={() => { setKTaraf("dep"); setKKim(""); }} />{dep.ad}</label>
+            </div>
+            <label>Oyuncu
+              <select name="kim" value={kSecili} onChange={(e) => setKKim(e.target.value)}>
+                {kKadro.map((o) => <option key={o.id} value={`o:${o.id}`}>{o.numara !== null ? `${o.numara} · ` : ""}{o.ad}</option>)}
+                <option value={kDiger}>Listede yok, adını yazacağım</option>
+              </select>
+            </label>
+            {kSecili === kDiger && <label>Oyuncu adı<input name="oyuncu" maxLength={60} required autoComplete="off" /></label>}
+            <label>Dakika<input name="dakika" type="number" inputMode="numeric" min={1} max={130} /></label>
+            <div className="y-kart-dugme">
+              <button className="y-btn y-kart-btn sari" type="submit" name="renk" value="sari">Sarı kart</button>
+              <button className="y-btn y-kart-btn kirmizi" type="submit" name="renk" value="kirmizi">Kırmızı kart</button>
+            </div>
+          </form>
+        </section>
+      )}
+
+      <section className="y-kart">
+        <h2>Kartlar ({kartlar.length})</h2>
+        {kartlar.length === 0 ? <p className="y-bos">Kart yok.</p> : (
+          <ol style={{ display: "grid", gap: 6 }}>
+            {[...kartlar].reverse().map((x) => (
+              <li key={x.id}>
+                <span aria-hidden style={{ display: "inline-block", width: 10, height: 14, borderRadius: 2, verticalAlign: "-2px", marginRight: 6, background: x.renk === "sari" ? "#F2C200" : "#C62828" }} />
+                {x.dakika ? `${x.dakika}' ` : ""}<strong>{x.oyuncu}</strong>
+                <span className="y-soluk"> · {x.renk === "sari" ? "sarı" : "kırmızı"} · {x.takim_id === ev.id ? ev.ad : dep.ad}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+        {sonKart && (
+          <form action={kartSilAction}>
+            <input type="hidden" name="id" value={sonKart.id} /><input type="hidden" name="turnuva_id" value={T} />
+            <button className="y-btn tehlike" type="submit">Son kartı geri al</button>
           </form>
         )}
       </section>

@@ -311,6 +311,46 @@ export async function canliAction(f: FormData) {
   bitir(ETIKET.turnuva);
 }
 
+// KARTLAR: "kim" golle ayni bicim ("o:<oyuncuId>" ya da "t:<takimId>" + serbest "oyuncu"); renk sari | kirmizi
+export async function kartEkleAction(f: FormData) {
+  await yetkiGerekli();
+  const macId = kimlik(f, "mac_id");
+  const tid = kimlik(f, "turnuva_id");
+  const hedef = donus(f);
+  const bolum = hedef ? "" : `mac-${macId}`;
+  const renk = metin(f, "renk", 10);
+  if (renk !== "sari" && renk !== "kirmizi") geri(tid, "Kart rengi seç.", bolum, hedef);
+  const dk = tamsayi(f, "dakika");
+  const dakika = dk !== null && dk >= 1 && dk <= 130 ? dk : null;
+  const sql = await db();
+  const [m] = await sql<{ ev_id: number | null; dep_id: number | null }[]>`select ev_id, dep_id from mac where id = ${macId} and turnuva_id = ${tid}`;
+  if (!m || m.ev_id === null || m.dep_id === null) geri(tid, "Maç bulunamadı ya da takımları belli değil.", bolum, hedef);
+  const kim = metin(f, "kim", 20);
+  let takimId: number | null, oyuncu: string, oyuncuId: number | null = null;
+  const om = /^o:(\d+)$/.exec(kim), tm = /^t:(\d+)$/.exec(kim);
+  if (om) {
+    const [o] = await sql<{ id: number; takim_id: number; ad: string }[]>`select id, takim_id, ad from oyuncu where id = ${Number(om[1])}`;
+    if (!o) geri(tid, "Oyuncu bulunamadı.", bolum, hedef);
+    takimId = o.takim_id; oyuncu = o.ad; oyuncuId = o.id;
+  } else {
+    takimId = tm ? Number(tm[1]) : null;
+    oyuncu = metin(f, "oyuncu", 60);
+    if (oyuncu.length < 2) geri(tid, "Kartı gören oyuncuyu seç ya da adını yaz.", bolum, hedef);
+  }
+  if (takimId !== m.ev_id && takimId !== m.dep_id) geri(tid, "Takım bu maçta oynamıyor.", bolum, hedef);
+  await sql`insert into kart (mac_id, takim_id, oyuncu, oyuncu_id, renk, dakika) values (${macId}, ${takimId}, ${oyuncu}, ${oyuncuId}, ${renk}, ${dakika})`;
+  bitir(ETIKET.turnuva);
+}
+
+export async function kartSilAction(f: FormData) {
+  await yetkiGerekli();
+  const id = kimlik(f);
+  const tid = kimlik(f, "turnuva_id");
+  const sql = await db();
+  await sql`delete from kart x using mac m where x.id = ${id} and m.id = x.mac_id and m.turnuva_id = ${tid}`;
+  bitir(ETIKET.turnuva);
+}
+
 // KADROLAR
 async function takimKontrol(tid: number, takimId: number) {
   const sql = await db();
@@ -318,16 +358,44 @@ async function takimKontrol(tid: number, takimId: number) {
   return !!k;
 }
 
+// Oyuncu alanlari. yas herkese acik; bolum ve ogrenci_no yalniz panelde gorunur.
+function oyuncuAlanlari(f: FormData) {
+  const no = tamsayi(f, "numara"), yas = tamsayi(f, "yas");
+  return {
+    ad: metin(f, "ad", 60),
+    numara: no !== null && no >= 0 && no <= 99 ? no : null,
+    yas: yas !== null && yas >= 10 && yas <= 80 ? yas : null,
+    bolum: metin(f, "bolum", 80),
+    ogrenci_no: metin(f, "ogrenci_no", 20).replace(/[^0-9A-Za-z]/g, ""),
+  };
+}
+
 export async function oyuncuEkleAction(f: FormData) {
   await yetkiGerekli();
   const tid = kimlik(f, "turnuva_id");
   const takimId = kimlik(f, "takim_id");
-  const ad = metin(f, "ad", 60);
-  const no = tamsayi(f, "numara");
-  if (ad.length < 2) geri(tid, "Oyuncu adı gerekli.", `kadro-${takimId}`);
+  const o = oyuncuAlanlari(f);
+  if (o.ad.length < 2) geri(tid, "Oyuncu adı gerekli.", `kadro-${takimId}`);
   if (!(await takimKontrol(tid, takimId))) geri(tid, "Takım bulunamadı.", "kadrolar");
   const sql = await db();
-  await sql`insert into oyuncu (takim_id, ad, numara) values (${takimId}, ${ad}, ${no !== null && no >= 0 && no <= 99 ? no : null})`;
+  await sql`insert into oyuncu (takim_id, ad, numara, yas, bolum, ogrenci_no) values (${takimId}, ${o.ad}, ${o.numara}, ${o.yas}, ${o.bolum}, ${o.ogrenci_no})`;
+  bitir(ETIKET.turnuva);
+}
+
+// Oyuncu duzenleme. Ad degisirse kayitli gol/asist/kartlardaki ad da guncellenir (istatistik kopmasin).
+export async function oyuncuGuncelleAction(f: FormData) {
+  await yetkiGerekli();
+  const id = kimlik(f);
+  const tid = kimlik(f, "turnuva_id");
+  const o = oyuncuAlanlari(f);
+  const sql = await db();
+  const [eski] = await sql<{ takim_id: number }[]>`select o.takim_id from oyuncu o join takim k on k.id = o.takim_id where o.id = ${id} and k.turnuva_id = ${tid}`;
+  if (!eski) geri(tid, "Oyuncu bulunamadı.", "kadrolar");
+  if (o.ad.length < 2) geri(tid, "Oyuncu adı gerekli.", `kadro-${eski.takim_id}`);
+  await sql`update oyuncu set ad = ${o.ad}, numara = ${o.numara}, yas = ${o.yas}, bolum = ${o.bolum}, ogrenci_no = ${o.ogrenci_no} where id = ${id}`;
+  await sql`update gol set oyuncu = ${o.ad} where oyuncu_id = ${id}`;
+  await sql`update gol set asist = ${o.ad} where asist_id = ${id}`;
+  await sql`update kart set oyuncu = ${o.ad} where oyuncu_id = ${id}`;
   bitir(ETIKET.turnuva);
 }
 

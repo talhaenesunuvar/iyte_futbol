@@ -5,12 +5,12 @@ import { db } from "./db";
 import { ETIKET } from "./ayar";
 import {
   golKralligi, kaybeden, kazanan, oynandi, sonrakiAsama, sonrakiYer,
-  type Asama, type Durum, type Gol, type Mac, type Oyuncu, type Takim, type Turnuva,
+  type Asama, type Durum, type Gol, type Kart, type Mac, type Oyuncu, type OyuncuGizli, type Takim, type Turnuva,
 } from "./turnuva-hesap";
 
 export * from "./turnuva-hesap";
 
-export type TurnuvaVerisi = { turnuva: Turnuva; takimlar: Takim[]; maclar: Mac[]; goller: Gol[]; oyuncular: Oyuncu[] };
+export type TurnuvaVerisi = { turnuva: Turnuva; takimlar: Takim[]; maclar: Mac[]; goller: Gol[]; oyuncular: Oyuncu[]; kartlar: Kart[] };
 
 async function turnuvaYukle(sql: postgres.Sql, id: number): Promise<TurnuvaVerisi | null> {
   const [t] = await sql<Turnuva[]>`select id, ad, sezon, durum, aciklama, kurallar, kontenjan, basvuru_acik, aktif, ornek from turnuva where id = ${id}`;
@@ -25,9 +25,12 @@ async function turnuvaYukle(sql: postgres.Sql, id: number): Promise<TurnuvaVeris
   const maclar: Mac[] = ham.map((m) => ({ ...m, zaman: m.zaman ? new Date(m.zaman).toISOString() : null }));
   const goller = await sql<Gol[]>`select g.id, g.mac_id, g.takim_id, g.oyuncu, g.oyuncu_id, g.asist, g.asist_id, g.dakika
     from gol g join mac m on m.id = g.mac_id where m.turnuva_id = ${id} order by g.mac_id, g.dakika nulls last, g.id`;
-  const oyuncular = await sql<Oyuncu[]>`select o.id, o.takim_id, o.ad, o.numara from oyuncu o join takim k on k.id = o.takim_id
+  // GIZLILIK: bolum ve ogrenci_no burada secilmez (bu veri herkese acik sayfalara gider)
+  const oyuncular = await sql<Oyuncu[]>`select o.id, o.takim_id, o.ad, o.numara, o.yas from oyuncu o join takim k on k.id = o.takim_id
     where k.turnuva_id = ${id} order by o.takim_id, o.numara nulls last, o.ad`;
-  return { turnuva: t, takimlar, maclar, goller, oyuncular };
+  const kartlar = await sql<Kart[]>`select x.id, x.mac_id, x.takim_id, x.oyuncu, x.oyuncu_id, x.renk, x.dakika
+    from kart x join mac m on m.id = x.mac_id where m.turnuva_id = ${id} order by x.mac_id, x.dakika nulls last, x.id`;
+  return { turnuva: t, takimlar, maclar, goller, oyuncular, kartlar };
 }
 
 async function vitrinId(sql: postgres.Sql): Promise<number | null> {
@@ -60,6 +63,24 @@ export async function macTurnuvasi(macId: number): Promise<number | null> {
   cacheLife("minutes");
   const sql = await db();
   const [r] = await sql<{ turnuva_id: number }[]>`select turnuva_id from mac where id = ${macId}`;
+  return r?.turnuva_id ?? null;
+}
+
+// Takim / oyuncu sayfasi: kaydin turnuvasi (onbellekli)
+export async function takimTurnuvasi(takimId: number): Promise<number | null> {
+  "use cache";
+  cacheTag(ETIKET.turnuva);
+  cacheLife("minutes");
+  const sql = await db();
+  const [r] = await sql<{ turnuva_id: number }[]>`select turnuva_id from takim where id = ${takimId}`;
+  return r?.turnuva_id ?? null;
+}
+export async function oyuncuTurnuvasi(oyuncuId: number): Promise<number | null> {
+  "use cache";
+  cacheTag(ETIKET.turnuva);
+  cacheLife("minutes");
+  const sql = await db();
+  const [r] = await sql<{ turnuva_id: number }[]>`select k.turnuva_id from oyuncu o join takim k on k.id = o.takim_id where o.id = ${oyuncuId}`;
   return r?.turnuva_id ?? null;
 }
 
@@ -115,6 +136,13 @@ export async function turnuvaListesi() {
 export async function turnuvaPanel(id: number) {
   const sql = await db();
   return turnuvaYukle(sql, id);
+}
+
+// YALNIZ PANEL (yetkiGerekli sonrasi): oyuncunun bolum ve ogrenci no'su. Onbelleksiz, herkese acik sayfalarda kullanma.
+export async function oyuncuGizli(turnuvaId: number): Promise<Map<number, OyuncuGizli>> {
+  const sql = await db();
+  const l = await sql<OyuncuGizli[]>`select o.id, o.bolum, o.ogrenci_no from oyuncu o join takim k on k.id = o.takim_id where k.turnuva_id = ${turnuvaId}`;
+  return new Map(l.map((x) => [x.id, x]));
 }
 
 export type Basvuru = { id: number; takim_ad: string; kaptan: string; telefon: string; eposta: string; oyuncular: string; durum: string; olusturma: Date };

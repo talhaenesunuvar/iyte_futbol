@@ -5,7 +5,7 @@ import "../../turnuva.css";
 import "./mac.css";
 import UstMenu from "@/components/UstMenu";
 import AltKisim from "@/components/AltKisim";
-import { ASAMA_AD, kazanan, macTurnuvasi, oynandi, tarihYaz, turnuvaVerisiIcin, type Gol, type Takim } from "@/lib/turnuva";
+import { ASAMA_AD, kazanan, macTurnuvasi, oynandi, tarihYaz, turnuvaVerisiIcin, type Gol, type Kart, type Takim } from "@/lib/turnuva";
 import CanliYenile from "../../CanliYenile";
 import PaylasDugmesi from "../../PaylasDugmesi";
 import TakimRozet from "../../TakimRozet";
@@ -43,6 +43,7 @@ async function Icerik({ params }: { params: Promise<{ id: string }> }) {
   const k = kazanan(m);
   const goller = v.goller.filter((g) => g.mac_id === m.id);
   const evG = goller.filter((g) => g.takim_id === m.ev_id), depG = goller.filter((g) => g.takim_id === m.dep_id);
+  const kartlar = v.kartlar.filter((x) => x.mac_id === m.id);
   const asama = m.asama === "grup" ? `${m.grup} Grubu` : ASAMA_AD[m.asama];
   const pen = m.ev_pen !== null && m.dep_pen !== null;
 
@@ -84,6 +85,15 @@ async function Icerik({ params }: { params: Promise<{ id: string }> }) {
           </div>
         )}
       </section>
+      {kartlar.length > 0 && (
+        <section className="kap mac-goller-b">
+          <h2 className="s-h2">Kartlar</h2>
+          <div className="gol-iki">
+            <KartListesi baslik={ev?.ad ?? "Ev sahibi"} t={ev} l={kartlar.filter((x) => x.takim_id === m.ev_id)} />
+            <KartListesi baslik={dep?.ad ?? "Deplasman"} t={dep} l={kartlar.filter((x) => x.takim_id === m.dep_id)} />
+          </div>
+        </section>
+      )}
       {v.turnuva.ornek && <p className="ornek kap">Turnuva verileri örnektir.</p>}
     </>
   );
@@ -93,7 +103,7 @@ function Taraf({ t, galip }: { t: Takim | undefined; galip: boolean }) {
   return (
     <div className={"taraf" + (galip ? " galip" : "")}>
       <TakimRozet t={t ?? null} boy={64} />
-      <span>{t?.ad ?? "Belli değil"}</span>
+      {t ? <Link href={`/turnuva/takim/${t.id}`} className="taraf-ad">{t.ad}</Link> : <span>Belli değil</span>}
     </div>
   );
 }
@@ -107,7 +117,31 @@ function GolListesi({ baslik, t, l }: { baslik: string; t: Takim | undefined; l:
           {l.map((g) => (
             <li key={g.id}>
               <span className="dk">{g.dakika ? `${g.dakika}'` : "–"}</span>
-              <span><strong>{g.oyuncu}</strong>{g.asist && <small>Asist: {g.asist}</small>}</span>
+              <span>
+                <strong>{g.oyuncu_id ? <Link href={`/turnuva/oyuncu/${g.oyuncu_id}`}>{g.oyuncu}</Link> : g.oyuncu}</strong>
+                {g.asist && <small>Asist: {g.asist_id ? <Link href={`/turnuva/oyuncu/${g.asist_id}`}>{g.asist}</Link> : g.asist}</small>}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+function KartListesi({ baslik, t, l }: { baslik: string; t: Takim | undefined; l: Kart[] }) {
+  return (
+    <div className="gol-l">
+      <h3><TakimRozet t={t ?? null} boy={22} /> {baslik} <b>{l.length}</b></h3>
+      {l.length === 0 ? <p className="y">Kart yok</p> : (
+        <ol>
+          {l.map((x) => (
+            <li key={x.id}>
+              <span className="dk">{x.dakika ? `${x.dakika}'` : "–"}</span>
+              <span>
+                <strong><span className={`kart-i ${x.renk}`} aria-hidden /> {x.oyuncu_id ? <Link href={`/turnuva/oyuncu/${x.oyuncu_id}`}>{x.oyuncu}</Link> : x.oyuncu}</strong>
+                <small>{x.renk === "sari" ? "Sarı kart" : "Kırmızı kart"}</small>
+              </span>
             </li>
           ))}
         </ol>

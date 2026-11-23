@@ -8,6 +8,33 @@ import { kaybeden, type Mac } from "./turnuva-hesap";
 export async function gecisler(sql: postgres.Sql) {
   await gecisV2(sql);
   await gecisV3(sql);
+  await gecisV4(sql);
+}
+
+// V4 (2026-11-23): ornek turnuvanin oyuncularina ornek yas, oynanmis maclarina birkac sari/kirmizi kart.
+// Bolum ve ogrenci no ornek veride bos kalir (yalniz yonetim girer). Gercek turnuvalara dokunmaz.
+async function gecisV4(sql: postgres.Sql) {
+  const ilk = await sql`insert into ayar (anahtar, deger) values ('gecis_v4', now()::text) on conflict do nothing returning anahtar`;
+  if (!ilk.length) return;
+  const r = prng(9090);
+  const oyuncular = await sql<{ id: number }[]>`
+    select o.id from oyuncu o join takim k on k.id = o.takim_id join turnuva t on t.id = k.turnuva_id where t.ornek and o.yas is null order by o.id`;
+  for (const o of oyuncular) await sql`update oyuncu set yas = ${18 + Math.floor(r() * 8)} where id = ${o.id}`;
+  const maclar = await sql<{ id: number; ev_id: number; dep_id: number }[]>`
+    select m.id, m.ev_id, m.dep_id from mac m join turnuva t on t.id = m.turnuva_id
+    where t.ornek and m.ev_gol is not null and m.ev_id is not null and m.dep_id is not null
+      and not exists (select 1 from kart x where x.mac_id = m.id) order by m.id`;
+  for (const m of maclar) {
+    const adet = Math.floor(r() * 3);
+    for (let i = 0; i < adet; i++) {
+      const tk = r() < 0.5 ? m.ev_id : m.dep_id;
+      const l = await sql<{ id: number; ad: string }[]>`select id, ad from oyuncu where takim_id = ${tk} order by id`;
+      const o = l[Math.floor(r() * l.length)];
+      if (!o) continue;
+      const renk = r() < 0.12 ? "kirmizi" : "sari";
+      await sql`insert into kart (mac_id, takim_id, oyuncu, oyuncu_id, renk, dakika) values (${m.id}, ${tk}, ${o.ad}, ${o.id}, ${renk}, ${5 + Math.floor(r() * 75)})`;
+    }
+  }
 }
 
 // V3 (2026-11-22): ornek turnuvanin hakemsiz maclarina ornek hakem adi. Gercek turnuvalara dokunmaz.
