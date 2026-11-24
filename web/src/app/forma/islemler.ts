@@ -3,12 +3,15 @@
 import { ETIKET, ayarlarTaze } from "@/lib/ayar";
 import { fiyatlar, siparisEkle } from "@/lib/forma";
 import { bitir, metin, tamsayi, telefonGecerliMi, telefonNormal } from "@/lib/islem";
+import { COK_ISTEK, botMu, sinirAsildi } from "@/lib/sinir";
 
 export type SiparisSonuc =
   | { tamam?: undefined; hata?: string }
   | { tamam: true; kod: string; kapora: number; iban: string; alici: string };
 
 export async function siparisAction(_: SiparisSonuc, f: FormData): Promise<SiparisSonuc> {
+  if (botMu(f)) return { hata: "Sipariş gönderilemedi." };
+  if (await sinirAsildi("siparis", 30, 60)) return { hata: COK_ISTEK };
   const a = await ayarlarTaze();
   const { kapora, bedenler } = fiyatlar(a);
   const ad = metin(f, "ad", 80);

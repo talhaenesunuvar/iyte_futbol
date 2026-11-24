@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { basvuruAction } from "./islemler";
+import BotTuzagi from "@/components/BotTuzagi";
 
 export default function BasvuruFormu() {
   const [d, gonder, bekliyor] = useActionState(basvuruAction, {});
@@ -15,6 +16,7 @@ export default function BasvuruFormu() {
   }
   return (
     <form action={gonder} className="s-form" noValidate>
+            <BotTuzagi />
       <h3>Takım başvurusu</h3>
       <label>Takım adı<input name="takim" maxLength={60} required /></label>
       <div className="s-yan">

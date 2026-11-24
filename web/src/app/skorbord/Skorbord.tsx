@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import UstMenu from "@/components/UstMenu";
 import AltKisim from "@/components/AltKisim";
 import { Yay, azaltilmis, izdusum, tut } from "@/lib/akici";
-import { OLAYLAR, WHATSAPP, beliren, sinir } from "@/lib/ortak";
+import { ILETISIM, OLAYLAR, beliren, sinir } from "@/lib/ortak";
 import { satirKur } from "./tabela";
 
 // Tabela satiri. Icini tabela.ts doldurur; React bu dugumun cocuklarina dokunmaz.
@@ -95,7 +95,7 @@ export default function Skorbord() {
           <div className="pano" aria-hidden="true"><Sat m="İYTE FUTBOL" n={11} /><Sat m="IZTECH FOOTBALL" n={15} /></div>
           <p>Kampüsün futbol topluluğu. Maçın dakikası sayfayla ilerliyor.</p>
           <p className="ipucu" aria-hidden="true">Harflere dokun ya da aşağı çek. Alttaki saati sürükle.</p>
-          <div className="d"><a className="btn" href="#etkinlikler">Etkinliklere bak</a><a className="btn iki" href={WHATSAPP} target="_blank" rel="noopener noreferrer">Bize ulaş</a></div>
+          <div className="d"><a className="btn" href="#etkinlikler">Etkinliklere bak</a><a className="btn iki" href={ILETISIM}>Bize ulaş</a></div>
         </section>
         <section className="bol biz kap" id="hakkimizda">
           <div className="pano bas-p" aria-hidden="true"><Sat m="HAKKIMIZDA" n={10} gor /></div>
@@ -120,7 +120,7 @@ export default function Skorbord() {
           <div className="kap">
             <h2 className="sr">Sıradaki maç senin</h2>
             <div className="pano" aria-hidden="true"><Sat m="SIRADAKİ MAÇ" n={12} gor /><Sat m="SENİN" n={12} gor /></div>
-            <a className="btn ters" href={WHATSAPP} target="_blank" rel="noopener noreferrer">Bize ulaş</a>
+            <a className="btn ters" href={ILETISIM}>Bize ulaş</a>
           </div>
         </section>
       </main>

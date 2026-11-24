@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { yetkiGerekli } from "@/lib/yetki";
 import { waNumara } from "@/lib/islem";
 import {
-  ASAMA_AD, DURUM_AD, GRUP_HARF, SIRALI_ASAMA, basvurular, kazanan, oynandi, oyuncuGizli, puanDurumu, renkGecerli, turnuvaPanel, yerelDeger,
+  ASAMA_AD, DURUM_AD, GRUP_HARF, MEVKILER, SINIFLAR, SIRALI_ASAMA, basvurular, kazanan, oynandi, oyuncuGizli, puanDurumu, renkGecerli, turnuvaPanel, yerelDeger,
   type Gol, type Kart, type Mac, type Oyuncu, type OyuncuGizli, type Takim,
 } from "@/lib/turnuva";
 import TurnuvaFormu from "../TurnuvaFormu";
@@ -103,6 +103,11 @@ export default async function TurnuvaYonet({ params, searchParams }: Props) {
               <span className="y-soluk">{G} gruba her torbadan birer takım dağıtılır; mevcut gruplar değişir.</span>
               <button className="y-btn" type="submit">Kurayı çek</button>
             </form>
+            {/* Kura ekrani: cekilen kuranin sirasini animasyonla oynatir (etkinlikte tam ekran projeksiyon) */}
+            <div className="y-dugmeler" style={{ marginTop: 8 }}>
+              <span className="y-soluk">Çekilen kura, kura ekranında takım takım animasyonla oynatılır.</span>
+              <Link className="y-btn ikincil" href={`/turnuva/kura?t=${T}`} target="_blank" rel="noopener">Canlı kura ekranını aç ↗</Link>
+            </div>
           </details>
         </div>
         <form action={takimEkleAction} className="y-satir">
@@ -379,6 +384,15 @@ function KartSay({ l }: { l: Kart[] }) {
   return <span className="y-soluk">{s > 0 && <>{s} sarı</>}{s > 0 && k > 0 && ", "}{k > 0 && <>{k} kırmızı</>}</span>;
 }
 
+function Secim({ form, ad, l, deger, etiket }: { form?: string; ad: string; l: readonly string[]; deger: string; etiket?: string }) {
+  return (
+    <select form={form} name={ad} defaultValue={deger} aria-label={etiket}>
+      <option value="">—</option>
+      {l.map((x) => <option key={x} value={x}>{x}</option>)}
+    </select>
+  );
+}
+
 // Takim kadrosu: her oyuncu bir satir (form niteligiyle satir ici duzenleme), altta tekli ve toplu ekleme
 function KadroPanel({ k, T, oyuncular, gizli }: { k: Takim; T: number; oyuncular: Oyuncu[]; gizli: Map<number, OyuncuGizli> }) {
   return (
@@ -388,16 +402,19 @@ function KadroPanel({ k, T, oyuncular, gizli }: { k: Takim; T: number; oyuncular
         {oyuncular.length > 0 && (
           <div className="y-tablo-kap">
             <table className="y-tablo">
-              <thead><tr><th>No</th><th>Ad soyad</th><th>Yaş</th><th>Bölüm <span className="y-soluk">(gizli)</span></th><th>Öğrenci no <span className="y-soluk">(gizli)</span></th><th></th></tr></thead>
+              <thead><tr><th>No</th><th>Foto</th><th>Ad soyad</th><th>Mevki</th><th>Yaş</th><th>Bölüm</th><th>Sınıf</th><th>Öğrenci no <span className="y-soluk">(gizli)</span></th><th></th></tr></thead>
               <tbody>
                 {oyuncular.map((o) => {
                   const fid = `oy-${o.id}`, g = gizli.get(o.id);
                   return (
                     <tr key={o.id}>
                       <td style={{ width: 70 }}><input form={fid} name="numara" type="number" min={0} max={99} defaultValue={o.numara ?? ""} aria-label="Forma no" /></td>
+                      <td style={{ whiteSpace: "nowrap" }}><LogoYukle formId={fid} alan="foto" dugme="Foto" kirp mevcut={o.foto_v ? `/turnuva/oyuncu/${o.id}/foto?v=${o.foto_v}` : null} /></td>
                       <td><input form={fid} name="ad" defaultValue={o.ad} maxLength={60} required aria-label="Ad soyad" /></td>
+                      <td style={{ width: 120 }}><Secim form={fid} ad="mevki" l={MEVKILER} deger={o.mevki} etiket="Mevki" /></td>
                       <td style={{ width: 70 }}><input form={fid} name="yas" type="number" min={10} max={80} defaultValue={o.yas ?? ""} aria-label="Yaş" /></td>
-                      <td><input form={fid} name="bolum" defaultValue={g?.bolum ?? ""} maxLength={80} aria-label="Bölüm" placeholder="Bilgisayar Müh." /></td>
+                      <td><input form={fid} name="bolum" defaultValue={o.bolum} maxLength={80} aria-label="Bölüm" placeholder="Bilgisayar Müh." /></td>
+                      <td style={{ width: 130 }}><Secim form={fid} ad="sinif" l={SINIFLAR} deger={o.sinif} etiket="Sınıf" /></td>
                       <td style={{ width: 140 }}><input form={fid} name="ogrenci_no" defaultValue={g?.ogrenci_no ?? ""} maxLength={20} inputMode="numeric" aria-label="Öğrenci no" /></td>
                       <td className="sag" style={{ whiteSpace: "nowrap" }}>
                         <form id={fid} action={oyuncuGuncelleAction} className="y-satirici">
@@ -420,8 +437,10 @@ function KadroPanel({ k, T, oyuncular, gizli }: { k: Takim; T: number; oyuncular
           <input type="hidden" name="turnuva_id" value={T} /><input type="hidden" name="takim_id" value={k.id} />
           <label>No<input name="numara" type="number" min={0} max={99} /></label>
           <label>Ad soyad<input name="ad" maxLength={60} required /></label>
+          <label>Mevki<Secim ad="mevki" l={MEVKILER} deger="" /></label>
           <label>Yaş<input name="yas" type="number" min={10} max={80} /></label>
-          <label>Bölüm (gizli)<input name="bolum" maxLength={80} /></label>
+          <label>Bölüm<input name="bolum" maxLength={80} /></label>
+          <label>Sınıf<Secim ad="sinif" l={SINIFLAR} deger="" /></label>
           <label>Öğrenci no (gizli)<input name="ogrenci_no" maxLength={20} inputMode="numeric" /></label>
           <div><button className="y-btn" type="submit">Oyuncu ekle</button></div>
         </form>

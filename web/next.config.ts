@@ -5,6 +5,10 @@ const dev = process.env.NODE_ENV === "development";
 const onizleme = process.env.VERCEL_ENV === "preview";
 const live = onizleme ? " https://vercel.live" : "";
 const indexable = process.env.SITE_INDEXABLE === "true";
+// Koy Sahasi alt alan adi (ornek koy.iytefutbol.com). Eskiden src/proxy.ts her istekte calisip bunu yapiyordu;
+// artik Vercel'in yonlendirme katmaninda fonksiyon cagirmadan calisir (guvenlik incelemesi 2026-11-24). Degisirse yeniden deploy.
+const koyHost = process.env.KOY_HOST?.trim().toLowerCase() || "";
+const koyda = [{ type: "host" as const, value: koyHost }];
 
 // Nonce'lu CSP cacheComponents (PPR) ile uyumsuz; Next'in kendi inline scriptleri icin
 // 'unsafe-inline' gerekir. Sayfada kullanici girdisi olmadigi icin kabul edilebilir.
@@ -44,9 +48,23 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/turnuva/gorsel/**": ["./src/assets/**"],
   },
-  // Kale Agi ana sayfaya tasindi; eski adres kalici yonlendirme ile gelir.
+  // Kale Agi ana sayfaya tasindi; Skorbord eski tasarim (2026-11-24 SEO incelemesi: bagimsiz kopya sayfa).
   async redirects() {
-    return [{ source: "/kale-agi", destination: "/", permanent: true }];
+    return [
+      { source: "/kale-agi", destination: "/", permanent: true },
+      { source: "/skorbord", destination: "/", permanent: true },
+      ...(koyHost
+        ? [
+            // Koy adresinde koy sayfasi disindaki her yol "/"a doner
+            { source: "/:yol((?!koy-sahasi$|_next/|api/|img/|icon[.]png|apple-icon[.]png).+)", has: koyda, destination: "/", permanent: false },
+            // Ana alandaki /koy-sahasi kopya olmasin: koy adresine gider
+            { source: "/koy-sahasi", missing: koyda, destination: `https://${koyHost}/`, permanent: true },
+          ]
+        : []),
+    ];
+  },
+  async rewrites() {
+    return koyHost ? { beforeFiles: [{ source: "/", has: koyda, destination: "/koy-sahasi" }], afterFiles: [], fallback: [] } : [];
   },
   async headers() {
     return [{ source: "/:path*", headers: guvenlik }];

@@ -1,5 +1,8 @@
 // Veritabani semasi. Her acilista IF NOT EXISTS ile calisir; tablo silmez, veri bozmaz.
 // Yeni sutun gerekirse sona "alter table ... add column if not exists" eklenir.
+// SEMAYI DEGISTIRINCE SEMA_SURUM'U ARTIR: soguk acilista sema yalnizca kayitli surum eskiyse calisir
+// (ALTER TABLE, sutun varken bile tablo kilidi alir; her yeni sunucu orneginde calismasin).
+export const SEMA_SURUM = "5";
 export const SEMA = /* sql */ `
 create table if not exists ayar (
   anahtar text primary key,
@@ -167,4 +170,20 @@ create table if not exists kart (
   dakika int
 );
 create index if not exists kart_mac on kart (mac_id);
+-- V5 (2026-11-24, Derin): oyuncu sinifi, mevkii ve profil fotografi (data URL); bolum artik herkese acik, ogrenci_no gizli kalir
+alter table oyuncu add column if not exists sinif text not null default '';
+alter table oyuncu add column if not exists mevki text not null default '';
+alter table oyuncu add column if not exists foto text;
+-- Kura animasyonu: son cekilen kuranin sirasi, JSON [{"takim_id":1,"torba":1,"grup":"A"}, ...] + cekim zamani
+alter table turnuva add column if not exists kura text;
+alter table turnuva add column if not exists kura_zaman timestamptz;
+-- Herkese acik formlarin hiz siniri: sabit pencereli atomik sayac (anahtar = islem:ip, pencere = pencere baslangici)
+create table if not exists istek_sayac (
+  anahtar text not null,
+  pencere timestamptz not null,
+  n int not null default 0,
+  primary key (anahtar, pencere)
+);
+-- Koy randevusunu alan IP (ayni IP'den en cok 2 aktif gelecek randevu; sahte doldurmaya karsi)
+alter table koy_randevu add column if not exists ip text not null default '';
 `;

@@ -1,15 +1,14 @@
-import { db } from "@/lib/db";
-import { ASAMA_AD, kazanan, oynandi, tarihYaz, turnuvaVerisiIcin } from "@/lib/turnuva";
-import { Cerceve, R, Rozet, logolar, resim, yok } from "../../ortak";
+import { ASAMA_AD, kazanan, macTurnuvasi, oynandi, tarihYaz, turnuvaVerisiIcin } from "@/lib/turnuva";
+import { Cerceve, R, Rozet, fazlaParametre, logolar, resim, yok } from "../../ortak";
 
 // Mac sonucu karti (Instagram 4:5)
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (fazlaParametre(req)) return yok();
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) return yok();
-  const sql = await db();
-  const [r] = await sql<{ turnuva_id: number }[]>`select turnuva_id from mac where id = ${id}`;
-  if (!r) return yok();
-  const v = await turnuvaVerisiIcin(r.turnuva_id);
+  const tid = await macTurnuvasi(id);
+  if (tid === null) return yok();
+  const v = await turnuvaVerisiIcin(tid);
   const m = v?.maclar.find((x) => x.id === id);
   if (!v || !m || m.ev_id === null || m.dep_id === null) return yok();
   const lg = await logolar(v.turnuva.id);

@@ -1,3 +1,4 @@
+import type { Metadata, ResolvingMetadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,10 +8,29 @@ import UstMenu from "@/components/UstMenu";
 import AltKisim from "@/components/AltKisim";
 import { ASAMA_AD, kazanan, oynandi, oyuncuIstatistik, takimTurnuvasi, tarihYaz, turnuvaVerisiIcin } from "@/lib/turnuva";
 import TakimRozet, { TakimAdi } from "../../TakimRozet";
+import { OG_BASE, SITE_AD } from "@/lib/site";
 
 // Takim sayfasi (Derin, 2026-11-23): kadro, her oyuncunun yasi, golu, asisti ve kartlari; takimin maclari.
 // Bolum ve ogrenci no burada YOK (yalniz yonetim paneli).
-export const metadata = { title: "Takım" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }, parent: ResolvingMetadata): Promise<Metadata> {
+  const id = Number((await params).id);
+  if (!Number.isInteger(id) || id <= 0) notFound();
+  const tid = await takimTurnuvasi(id);
+  const v = tid === null ? null : await turnuvaVerisiIcin(tid);
+  const t = v?.takimlar.find((x) => x.id === id);
+  if (!v || !t) notFound();
+  const tur = `${v.turnuva.ad} ${v.turnuva.sezon}`.trim();
+  const baslik = `${t.ad} · ${tur}`;
+  const n = v.oyuncular.filter((o) => o.takim_id === id).length;
+  const aciklama = `${t.ad}: ${tur}${t.grup ? `, ${t.grup} Grubu` : ""}. Kadro (${n} oyuncu), maçlar, goller ve kartlar.`;
+  const url = `/turnuva/takim/${id}`;
+  const images = (await parent).openGraph?.images ?? [];
+  return {
+    title: baslik, description: aciklama, alternates: { canonical: url },
+    openGraph: { ...OG_BASE, title: `${baslik} · ${SITE_AD}`, description: aciklama, url, images },
+    ...(v.turnuva.ornek ? { robots: { index: false, follow: true } } : {}),
+  };
+}
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   return (
@@ -82,7 +102,7 @@ async function Icerik({ params }: { params: Promise<{ id: string }> }) {
               <caption className="gizli">{t.ad} kadrosu</caption>
               <thead>
                 <tr>
-                  <th scope="col">No</th><th scope="col" className="ad">Oyuncu</th><th scope="col">Yaş</th>
+                  <th scope="col">No</th><th scope="col" className="ad">Oyuncu</th><th scope="col" className="gizle-m">Mevki</th><th scope="col">Yaş</th>
                   <th scope="col" title="Gol">Gol</th><th scope="col" title="Asist">Asist</th>
                   <th scope="col" title="Sarı kart"><span className="kart-i sari" aria-label="Sarı kart" /></th>
                   <th scope="col" title="Kırmızı kart"><span className="kart-i kirmizi" aria-label="Kırmızı kart" /></th>
@@ -92,7 +112,16 @@ async function Icerik({ params }: { params: Promise<{ id: string }> }) {
                 {kadro.map(({ o, i }) => (
                   <tr key={o.id}>
                     <td className="no">{o.numara ?? "–"}</td>
-                    <th scope="row" className="ad"><Link href={`/turnuva/oyuncu/${o.id}`}>{o.ad}</Link></th>
+                    <th scope="row" className="ad">
+                      <Link href={`/turnuva/oyuncu/${o.id}`} className="ek-oy">
+                        {o.foto_v
+                          // eslint-disable-next-line @next/next/no-img-element
+                          ? <img className="ek-mini" src={`/turnuva/oyuncu/${o.id}/foto?v=${o.foto_v}`} alt="" width={28} height={28} loading="lazy" />
+                          : <span className="ek-mini bos" aria-hidden>{o.ad.slice(0, 1)}</span>}
+                        {o.ad}
+                      </Link>
+                    </th>
+                    <td className="gizle-m">{o.mevki || "–"}</td>
                     <td>{o.yas ?? "–"}</td>
                     <td className={i.gol ? "p" : "s"}>{i.gol}</td>
                     <td className={i.asist ? "p" : "s"}>{i.asist}</td>

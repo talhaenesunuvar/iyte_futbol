@@ -10,9 +10,16 @@ export type Turnuva = {
 };
 // logo_v: logonun kisa ozeti (surum); gorsel /turnuva/logo/[id]?v=... adresinden gelir. renk: #RRGGBB
 export type Takim = { id: number; ad: string; grup: string | null; torba: number | null; logo_v: string | null; renk: string | null };
-// Herkese acik oyuncu alanlari. bolum ve ogrenci_no BURADA YOK: yalniz panel `oyuncuGizli` ile okur.
-export type Oyuncu = { id: number; takim_id: number; ad: string; numara: number | null; yas: number | null };
-export type OyuncuGizli = { id: number; bolum: string; ogrenci_no: string };
+// Herkese acik oyuncu alanlari. ogrenci_no BURADA YOK: yalniz panel `oyuncuGizli` ile okur.
+// Bolum ve sinif 2026-11-24'ten beri herkese acik (Derin istedi). foto_v: fotografin kisa ozeti; gorsel /turnuva/oyuncu/[id]/foto?v=...
+export type Oyuncu = {
+  id: number; takim_id: number; ad: string; numara: number | null; yas: number | null;
+  bolum: string; sinif: string; mevki: string; foto_v: string | null;
+};
+export type OyuncuGizli = { id: number; ogrenci_no: string };
+export const MEVKILER = ["Kaleci", "Defans", "Orta saha", "Forvet"] as const;
+export const MEVKI_KISA: Record<string, string> = { Kaleci: "KL", Defans: "DF", "Orta saha": "OS", Forvet: "FV" };
+export const SINIFLAR = ["Hazırlık", "1. sınıf", "2. sınıf", "3. sınıf", "4. sınıf", "Yüksek lisans", "Doktora", "Mezun", "Personel"] as const;
 export type KartRenk = "sari" | "kirmizi";
 export type Kart = { id: number; mac_id: number; takim_id: number; oyuncu: string; oyuncu_id: number | null; renk: KartRenk; dakika: number | null };
 export type Mac = {

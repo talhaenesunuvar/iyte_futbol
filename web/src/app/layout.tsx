@@ -4,16 +4,19 @@ import "./globals.css";
 import AkiciKaydirma from "@/components/AkiciKaydirma";
 import { INDEXABLE, OG_BASE, SITE_ACIKLAMA, SITE_AD, SITE_BASLIK, SITE_URL } from "@/lib/site";
 
+// Govde yazisi on yuklenmez (once sistem fontu, sonra Barlow); basliklarin fontu on yuklenir.
+// 2026-11-24 SEO incelemesi: her sayfada 22 font on yukleniyordu, LCP ile yarisiyordu.
 const barlow = Barlow({
   variable: "--font-barlow",
   weight: ["400", "500", "600", "700", "800"],
   subsets: ["latin", "latin-ext"],
+  preload: false,
 });
 
-// Kale Ağı italik 800, Skorbord 600/700 kullanıyor
+// Basliklar 800 (cogu italik), menu 700; 600 artik kullanilmiyor (Skorbord yonlendirildi)
 const barlowC = Barlow_Condensed({
   variable: "--font-barlow-c",
-  weight: ["600", "700", "800"],
+  weight: ["700", "800"],
   style: ["normal", "italic"],
   subsets: ["latin", "latin-ext"],
 });
@@ -22,8 +25,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: SITE_BASLIK, template: `%s · ${SITE_AD}` },
   description: SITE_ACIKLAMA,
-  alternates: { canonical: "/" },
-  openGraph: { ...OG_BASE, title: SITE_BASLIK, description: SITE_ACIKLAMA, url: "/" },
+  // canonical ve og:url burada YOK: alt sayfalara gecip hepsini ana sayfanin kopyasi gosteriyordu. Her sayfa kendi verir.
+  openGraph: { ...OG_BASE, title: SITE_BASLIK, description: SITE_ACIKLAMA },
   twitter: { card: "summary_large_image" },
   // Onizleme suresince arama motorlarina kapali; alan adinda SITE_INDEXABLE=true ile acilir
   robots: INDEXABLE ? undefined : { index: false, follow: false },

@@ -2,7 +2,9 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/lib/db";
+import { ETIKET } from "@/lib/ayar";
 import { SITE_URL } from "@/lib/site";
 import { basHarf, renkGecerli, yaziRengi, type Takim } from "@/lib/turnuva-hesap";
 
@@ -21,12 +23,19 @@ const [fSemi, fBold, fItalik, rozet] = await Promise.all([
 const ROZET = `data:image/png;base64,${rozet.toString("base64")}`;
 const ALAN = SITE_URL.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
-// Turnuvanin PNG/JPEG logolari (Satori WebP cizemez; WebP olan takim bas harfle gosterilir)
-export async function logolar(turnuvaId: number) {
+// Turnuvanin PNG/JPEG logolari (Satori WebP cizemez; WebP olan takim bas harfle gosterilir).
+// Onbellekli: gorsel rotasi her istekte 32 logoyu (~2,5 MB) veritabanindan cekmesin (guvenlik incelemesi 2026-11-24).
+async function logoListesi(turnuvaId: number): Promise<[number, string][]> {
+  "use cache";
+  cacheTag(ETIKET.turnuva);
+  cacheLife("hours");
   const sql = await db();
   const r = await sql<{ id: number; logo: string }[]>`
     select id, logo from takim where turnuva_id = ${turnuvaId} and (logo like 'data:image/png;%' or logo like 'data:image/jpeg;%')`;
-  return new Map(r.map((x) => [x.id, x.logo]));
+  return r.map((x) => [x.id, x.logo]);
+}
+export async function logolar(turnuvaId: number) {
+  return new Map(await logoListesi(turnuvaId));
 }
 
 export function Rozet({ t, logo, boy, halka }: { t: Takim | undefined; logo?: string; boy: number; halka?: string }) {
@@ -79,6 +88,10 @@ export function resim(el: React.ReactElement) {
 }
 
 export const yok = () => new Response("Bulunamadı", { status: 404 });
+// Izin verilenler disinda sorgu parametresi varsa true. Rastgele "?x=..." ile CDN onbellegini atlatip
+// her istekte PNG cizdirme (CPU + Neon kotasi) yolunu kapatir.
+export const fazlaParametre = (req: Request, izinli: string[] = []) =>
+  [...new URL(req.url).searchParams.keys()].some((k) => !izinli.includes(k));
 export const tid = (req: Request) => {
   const n = Number(new URL(req.url).searchParams.get("t"));
   return Number.isInteger(n) && n > 0 ? n : null;

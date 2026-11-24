@@ -1,8 +1,9 @@
 import { ASAMA_AD, ELEME, kazanan, oynandi, turnuvaVerisi, turnuvaVerisiIcin, type Mac } from "@/lib/turnuva";
-import { Cerceve, R, Rozet, logolar, resim, tid, yok } from "../ortak";
+import { Cerceve, R, Rozet, fazlaParametre, logolar, resim, tid, yok } from "../ortak";
 
 // Eleme agaci + sampiyon (Instagram 4:5). ?t=<turnuvaId> verilmezse sitedeki turnuva.
 export async function GET(req: Request) {
+  if (fazlaParametre(req, ["t"])) return yok();
   const t = tid(req);
   const v = t ? await turnuvaVerisiIcin(t) : await turnuvaVerisi();
   if (!v) return yok();

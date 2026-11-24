@@ -1,10 +1,12 @@
+import type { Metadata, ResolvingMetadata } from "next";
 import Link from "next/link";
 import "./ana/ana.css";
+import { OG_BASE, SITE_ACIKLAMA, SITE_BASLIK } from "@/lib/site";
 import UstMenu from "@/components/UstMenu";
 import AltKisim from "@/components/AltKisim";
 import AnaKabuk from "./ana/AnaKabuk";
 import SahaCizgi from "./ana/SahaCizgi";
-import { WHATSAPP } from "@/lib/ortak";
+import { EPOSTA, ILETISIM } from "@/lib/ortak";
 import { tarihParca, yaklasanEtkinlikler } from "@/lib/etkinlik";
 import { turnuvaOzet } from "@/lib/turnuva";
 import { formaOzet } from "@/lib/forma";
@@ -12,6 +14,14 @@ import { formaOzet } from "@/lib/forma";
 // Ana sayfa (2026-11-22). Kale Agi hero'su Derin'in "cocukca" geri bildirimiyle kaldirildi;
 // yerine koyu, kulup sitesi tonunda bir giris + veritabanindan gelen turnuva/forma/etkinlik ozetleri.
 const SOZ = "Oynamak isteyen de izlemek isteyen de aynı sahada buluşuyor.".split(" ");
+
+export async function generateMetadata(_: unknown, parent: ResolvingMetadata): Promise<Metadata> {
+  const images = (await parent).openGraph?.images ?? [];
+  return {
+    alternates: { canonical: "/" },
+    openGraph: { ...OG_BASE, title: SITE_BASLIK, description: SITE_ACIKLAMA, url: "/", images },
+  };
+}
 
 const DURUM: Record<string, string> = { basvuru: "Başvurular açık", grup: "Grup maçları sürüyor", eleme: "Eleme turları", bitti: "Tamamlandı" };
 
@@ -32,13 +42,13 @@ export default async function Ana() {
           <div className="h-ic kap">
             <p className="h-ust">İzmir Yüksek Teknoloji Enstitüsü</p>
             <h1 aria-label="İYTE Futbol">
-              <span className="h-k"><span>İYTE</span></span>
+              <span className="h-k"><span>İYTE</span></span>{" "}
               <span className="h-k"><span>FUTBOL</span></span>
             </h1>
             <p className="h-soz">Kampüsün futbol topluluğu. Turnuvalar, haftalık maçlar, takım forması ve saha randevusu tek yerde.</p>
             <div className="h-dugme">
               <Link className="btn" href="/turnuva">Turnuvaya bak</Link>
-              <a className="btn h-cizgili" href={WHATSAPP} target="_blank" rel="noopener noreferrer">Bize ulaş</a>
+              <a className="btn h-cizgili" href={ILETISIM}>Bize ulaş</a>
             </div>
           </div>
 
@@ -123,7 +133,8 @@ export default async function Ana() {
           <div className="kap">
             <h2>Sıradaki maç senin.</h2>
             <p>Takıma katılmak, turnuvaya başvurmak ya da bir şey sormak için yaz.</p>
-            <a className="btn ters" href={WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp&apos;tan yaz</a>
+            <a className="btn ters" href={ILETISIM}>E-posta gönder</a>
+            <p className="eposta-yazi"><a href={ILETISIM}>{EPOSTA}</a></p>
           </div>
         </section>
       </main>

@@ -21,9 +21,11 @@ export async function koyDoluluk(): Promise<KoyDoluluk> {
   };
 }
 
+const IP_AZAMI = 2;
+
 // Ortak randevu kaydi (herkese acik form ve panelden elle ekleme). Server action DEGIL; cagiran dogrular.
 // gecmiseIzin: panel 7 gun sinirini asabilir.
-export async function randevuKaydet(g: { tarih: string; slot: number; ad: string; telefon: string; notu: string }, gecmiseIzin = false): Promise<{ hata: string } | { kod: string }> {
+export async function randevuKaydet(g: { tarih: string; slot: number; ad: string; telefon: string; notu: string; ip?: string }, gecmiseIzin = false): Promise<{ hata: string } | { kod: string }> {
   if (!tarihMi(g.tarih)) return { hata: "Gün geçersiz." };
   if (!Number.isInteger(g.slot) || g.slot < 0 || g.slot >= SLOTLAR.length) return { hata: "Saat geçersiz." };
   const simdi = new Date();
@@ -34,11 +36,17 @@ export async function randevuKaydet(g: { tarih: string; slot: number; ad: string
   const sql = await db();
   const [kapali] = await sql`select 1 from koy_kapali where tarih = ${g.tarih} and slot = ${g.slot}`;
   if (kapali) return { hata: "Bu saat kapalı." };
+  // Ayni IP'den en cok 2 aktif gelecek randevu (sahte numaralarla haftayi doldurmaya karsi; panel kaydinda ip yok)
+  if (g.ip) {
+    const [{ n }] = await sql<{ n: number }[]>`
+      select count(*)::int as n from koy_randevu where ip = ${g.ip} and durum = 'aktif' and tarih >= current_date - 1`;
+    if (n >= IP_AZAMI) return { hata: "Bu bağlantıdan zaten 2 aktif randevu var. Yeni randevu için saha sorumlusuna yaz." };
+  }
   for (let i = 0; ; i++) {
     const kod = kisaKod("KS");
     try {
-      await sql`insert into koy_randevu (tarih, slot, ad, telefon, hafta, notu, kod)
-        values (${g.tarih}, ${g.slot}, ${g.ad}, ${g.telefon}, ${haftaBasi(g.tarih)}, ${g.notu}, ${kod})`;
+      await sql`insert into koy_randevu (tarih, slot, ad, telefon, hafta, notu, kod, ip)
+        values (${g.tarih}, ${g.slot}, ${g.ad}, ${g.telefon}, ${haftaBasi(g.tarih)}, ${g.notu}, ${kod}, ${g.ip ?? ""})`;
       return { kod };
     } catch (e) {
       const h = e as { code?: string; constraint_name?: string };

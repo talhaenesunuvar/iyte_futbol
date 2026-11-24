@@ -1,8 +1,9 @@
 import { puanDurumu, turnuvaVerisi, turnuvaVerisiIcin } from "@/lib/turnuva";
-import { Cerceve, R, Rozet, logolar, resim, tid, yok } from "../../ortak";
+import { Cerceve, R, Rozet, fazlaParametre, logolar, resim, tid, yok } from "../../ortak";
 
 // Grup puan tablosu (Instagram 4:5). ?t=<turnuvaId> verilmezse sitedeki turnuva.
 export async function GET(req: Request, { params }: { params: Promise<{ harf: string }> }) {
+  if (fazlaParametre(req, ["t"])) return yok();
   const harf = (await params).harf.toUpperCase();
   if (!/^[A-P]$/.test(harf)) return yok();
   const t = tid(req);

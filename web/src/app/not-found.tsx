@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+export const metadata = { title: "Sayfa bulunamadı" };
+
 export default function NotFound() {
   return (
     <main className="kap" style={{ minHeight: "100svh", display: "grid", alignContent: "center", gap: 20, paddingBlock: 48 }}>

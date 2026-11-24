@@ -33,6 +33,14 @@
   .ek-liste .sag{font-weight:700;white-space:nowrap}
   .ek-liste small{display:block;font-size:13px;opacity:.65}
   .ek-bos{opacity:.65}
+  /* Oyuncu fotografi (2026-11-24): kare, yuvarlak koseli; forma numarasi sag altta rozet */
+  .ek-foto{position:relative;display:block;width:clamp(96px,16vw,160px);aspect-ratio:1}
+  .ek-foto img{width:100%;height:100%;object-fit:cover;border-radius:var(--k-l);display:block;background:var(--acik)}
+  .ek-foto b{position:absolute;right:-8px;bottom:-8px;min-width:44px;height:44px;padding:0 8px;display:grid;place-items:center;border-radius:12px;background:var(--bordo);color:#fff;font:italic 800 24px/1 var(--f-b);box-shadow:0 0 0 3px var(--karbon)}
+  .ek-mevki{padding:3px 10px;border-radius:999px;background:var(--bordo);color:#fff;font-size:14px;letter-spacing:.02em}
+  .ek-oy{display:inline-flex;align-items:center;gap:10px}
+  .ek-mini{width:28px;height:28px;border-radius:50%;object-fit:cover;flex:none;background:var(--acik)}
+  .ek-mini.bos{display:inline-grid;place-items:center;font:800 13px/1 var(--f-b);color:rgba(26,26,26,.55)}
   @media(max-width:700px){
     .ek-kart{grid-template-columns:1fr;justify-items:start}
     .ek-tablo .gizle-m{display:none}

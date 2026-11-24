@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState, useSyncExternalStore } from "react";
 import { SLOTLAR, gectiMi, gunBaslik, gunler, slotAnahtar, type Gun, type KoyDoluluk, type RandevuSonuc } from "@/lib/koy-sahasi";
 import { randevuAction } from "./islemler";
+import BotTuzagi from "@/components/BotTuzagi";
 
 const dakikaDinle = (cb: () => void) => { const t = setInterval(cb, 60_000); return () => clearInterval(t); };
 
@@ -92,6 +93,7 @@ export default function KoySahasi({ doluluk }: { doluluk: KoyDoluluk }) {
 
               {secim !== null && (
                 <form className="form" action={gonder} aria-labelledby="form-baslik">
+            <BotTuzagi />
                   <h3 id="form-baslik">{gunBaslik(gun)}, {SLOTLAR[secim].etiket}</h3>
                   <input type="hidden" name="gun" value={gun.anahtar} />
                   <input type="hidden" name="slot" value={secim} />

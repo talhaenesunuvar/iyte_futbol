@@ -22,7 +22,7 @@ export async function ayarKaydet(_: AyarSonuc, f: FormData): Promise<AyarSonuc> 
     }
     if (k === "iban") v = v.replace(/\s+/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim();
     if (k === "iban" && v && !/^TR\d{2}( ?\d{4}){5} ?\d{2}$/.test(v)) return { hata: "IBAN TR ile başlayan 26 karakter olmalı." };
-    if ((k === "okul_randevu_url" || k === "koy_url") && v && !/^(https:\/\/|\/)/.test(v)) return { hata: "Linkler https:// ya da / ile başlamalı." };
+    if ((k === "okul_randevu_url" || k === "koy_url") && v && !/^(https:\/\/|\/(?!\/))/.test(v)) return { hata: "Linkler https:// ya da / ile başlamalı." };
     yeni.push([k, v]);
   }
   if (Number(f.get("forma_kapora")) > Number(f.get("forma_fiyat"))) return { hata: "Kapora fiyattan büyük olamaz." };

@@ -9,6 +9,33 @@ export async function gecisler(sql: postgres.Sql) {
   await gecisV2(sql);
   await gecisV3(sql);
   await gecisV4(sql);
+  await gecisV5(sql);
+}
+
+// V5 (2026-11-24): ornek turnuvanin oyuncularina ornek mevki, bolum ve sinif (artik herkese acik).
+// 1 numara kaleci; digerleri numaraya gore defans/orta saha/forvet. Gercek turnuvalara dokunmaz.
+const ORNEK_BOLUM = ["Bilgisayar Müh.", "Makine Müh.", "Elektrik-Elektronik Müh.", "İnşaat Müh.", "Kimya Müh.", "Fizik", "Mimarlık", "Moleküler Biyoloji", "Matematik", "Gıda Müh."];
+const ORNEK_SINIF = ["Hazırlık", "1. sınıf", "2. sınıf", "3. sınıf", "4. sınıf", "Yüksek lisans"];
+function ornekMevki(no: number | null, r: () => number) {
+  if (no === 1) return "Kaleci";
+  if (no !== null && [2, 3, 4, 5, 6].includes(no)) return "Defans";
+  if (no !== null && [7, 8, 10, 14].includes(no)) return "Orta saha";
+  if (no !== null && [9, 11, 17].includes(no)) return "Forvet";
+  return ["Defans", "Orta saha", "Forvet"][Math.floor(r() * 3)];
+}
+async function gecisV5(sql: postgres.Sql) {
+  const ilk = await sql`insert into ayar (anahtar, deger) values ('gecis_v5', now()::text) on conflict do nothing returning anahtar`;
+  if (!ilk.length) return;
+  const r = prng(5150);
+  const oyuncular = await sql<{ id: number; numara: number | null }[]>`
+    select o.id, o.numara from oyuncu o join takim k on k.id = o.takim_id join turnuva t on t.id = k.turnuva_id
+    where t.ornek and o.mevki = '' order by o.id`;
+  for (const o of oyuncular) {
+    const bolum = ORNEK_BOLUM[Math.floor(r() * ORNEK_BOLUM.length)];
+    const sinif = ORNEK_SINIF[Math.floor(r() * ORNEK_SINIF.length)];
+    await sql`update oyuncu set mevki = ${ornekMevki(o.numara, r)}, bolum = case when bolum = '' then ${bolum} else bolum end,
+      sinif = case when sinif = '' then ${sinif} else sinif end where id = ${o.id}`;
+  }
 }
 
 // V4 (2026-11-23): ornek turnuvanin oyuncularina ornek yas, oynanmis maclarina birkac sari/kirmizi kart.

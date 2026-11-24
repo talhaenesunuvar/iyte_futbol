@@ -1,3 +1,4 @@
+import type { Metadata, ResolvingMetadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,9 +10,31 @@ import { ASAMA_AD, kazanan, macTurnuvasi, oynandi, tarihYaz, turnuvaVerisiIcin, 
 import CanliYenile from "../../CanliYenile";
 import PaylasDugmesi from "../../PaylasDugmesi";
 import TakimRozet from "../../TakimRozet";
+import { OG_BASE, SITE_AD } from "@/lib/site";
 
 // Mac detayi (Derin, 2026-11-22): kim gol atti, asistler, hakem, saha, tarih. Fikstur ve agactaki maclar buraya baglanir.
-export const metadata = { title: "Maç" };
+// Her macin kendi basligi/canonical'i (2026-11-24 SEO). Ornek turnuva Google'a girmez.
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }, parent: ResolvingMetadata): Promise<Metadata> {
+  const id = Number((await params).id);
+  if (!Number.isInteger(id) || id <= 0) notFound();
+  const tid = await macTurnuvasi(id);
+  const v = tid === null ? null : await turnuvaVerisiIcin(tid);
+  const m = v?.maclar.find((x) => x.id === id);
+  if (!v || !m) notFound();
+  const ad = (t: number | null) => v.takimlar.find((x) => x.id === t)?.ad ?? "?";
+  const asama = m.asama === "grup" ? `${m.grup} Grubu` : ASAMA_AD[m.asama];
+  const skor = oynandi(m) ? ` ${m.ev_gol}–${m.dep_gol} ` : " – ";
+  const baslik = `${ad(m.ev_id)}${skor}${ad(m.dep_id)} · ${asama}`;
+  const aciklama = `${v.turnuva.ad} ${v.turnuva.sezon}`.trim() + ` · ${asama}. ` +
+    [m.zaman ? tarihYaz(m.zaman) : "", m.saha, m.hakem ? `Hakem: ${m.hakem}` : ""].filter(Boolean).join(" · ") + ". Goller, asistler ve kartlar.";
+  const url = `/turnuva/mac/${id}`;
+  const images = (await parent).openGraph?.images ?? [];
+  return {
+    title: baslik, description: aciklama, alternates: { canonical: url },
+    openGraph: { ...OG_BASE, title: `${baslik} · ${SITE_AD}`, description: aciklama, url, images },
+    ...(v.turnuva.ornek ? { robots: { index: false, follow: true } } : {}),
+  };
+}
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   return (
@@ -54,6 +77,7 @@ async function Icerik({ params }: { params: Promise<{ id: string }> }) {
         <Link href="/turnuva#fikstur" className="mac-geri">← {v.turnuva.ad} {v.turnuva.sezon}</Link>
         <p className="s-etiket">{asama}{m.canli && <> · <b className="canli-isaret">CANLI</b></>}</p>
 
+        <h1 className="gizli">{ev?.ad ?? "?"} – {dep?.ad ?? "?"}, {asama}</h1>
         <div className="skorbord">
           <Taraf t={ev} galip={k !== null && k === m.ev_id} />
           <div className="sk">

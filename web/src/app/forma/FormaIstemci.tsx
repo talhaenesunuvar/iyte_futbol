@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { WHATSAPP } from "@/lib/ortak";
+import { EPOSTA, ILETISIM } from "@/lib/ortak";
 import { siparisAction, type SiparisSonuc } from "./islemler";
+import BotTuzagi from "@/components/BotTuzagi";
 
 const GOVDE = "M62 14 L84 6 Q100 20 116 6 L138 14 L188 44 L170 84 L150 74 L150 208 Q100 216 50 208 L50 74 L30 84 L12 44 Z";
 
@@ -61,12 +62,13 @@ export default function FormaIstemci({ bedenler, kapora }: { bedenler: string[];
                 {durum.alici && <small>Alıcı: {durum.alici}</small>}
               </>
             ) : (
-              <p>IBAN bilgisi kısa süre içinde paylaşılacak; kodunu sakla. Sorun olursa <a href={WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp&apos;tan yaz</a>.</p>
+              <p>IBAN bilgisi kısa süre içinde paylaşılacak; kodunu sakla. Sorun olursa sipariş kodunla birlikte <a href={ILETISIM}>{EPOSTA}</a> adresine yaz.</p>
             )}
             <small>Kapora ulaşınca siparişin onaylanır ve parti sayacına eklenir.</small>
           </div>
         ) : (
           <form action={gonder} className="s-form">
+            <BotTuzagi />
             <label>Ad Soyad<input name="ad" autoComplete="name" required maxLength={80} /></label>
             <label>Telefon<input name="telefon" type="tel" inputMode="tel" autoComplete="tel" placeholder="05xx xxx xx xx" required maxLength={30} /></label>
             <div className="s-yan">

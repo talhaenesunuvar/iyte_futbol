@@ -7,7 +7,7 @@ export default function Giris() {
     <main className="y-giris">
       <div className="y-kart">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/img/logo-rozet.webp" alt="" width={72} height={72} />
+        <img src="/img/logo-rozet-144.webp" alt="" width={72} height={72} />
         <h1>Yönetim paneli</h1>
         <p className="y-soluk">İYTE Futbol Topluluğu</p>
         <GirisFormu />

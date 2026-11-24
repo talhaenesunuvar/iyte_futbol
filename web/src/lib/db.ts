@@ -1,6 +1,6 @@
 import "server-only";
 import postgres from "postgres";
-import { SEMA } from "./sema";
+import { SEMA, SEMA_SURUM } from "./sema";
 import { tohumla } from "./tohum";
 import { gecisler } from "./gecis";
 
@@ -31,12 +31,24 @@ function baglan() {
   });
 }
 
-async function hazirla(sql: postgres.Sql) {
+async function semaGuncelMi(sql: postgres.Sql) {
   try {
-    await sql.unsafe(SEMA);
-  } catch (e) {
-    // Iki sunucu ornegi ayni anda CREATE ... IF NOT EXISTS calistirirsa pg_type cakismasi (23505) olabilir; tablo zaten var demektir
-    if ((e as { code?: string }).code !== "23505") throw e;
+    const [r] = await sql<{ deger: string }[]>`select deger from ayar where anahtar = 'sema_surum'`;
+    return r?.deger === SEMA_SURUM;
+  } catch {
+    return false; // ilk kurulum: ayar tablosu yok
+  }
+}
+
+async function hazirla(sql: postgres.Sql) {
+  if (!(await semaGuncelMi(sql))) {
+    try {
+      await sql.unsafe(SEMA);
+    } catch (e) {
+      // Iki sunucu ornegi ayni anda CREATE ... IF NOT EXISTS calistirirsa pg_type cakismasi (23505) olabilir; tablo zaten var demektir
+      if ((e as { code?: string }).code !== "23505") throw e;
+    }
+    await sql`insert into ayar (anahtar, deger) values ('sema_surum', ${SEMA_SURUM}) on conflict (anahtar) do update set deger = excluded.deger`;
   }
   await tohumla(sql);
   await gecisler(sql);

@@ -5,7 +5,7 @@ import UstMenu from "@/components/UstMenu";
 import AltKisim from "@/components/AltKisim";
 import { OG_BASE, SITE_AD } from "@/lib/site";
 import {
-  ASAMA_AD, DURUM_AD, SIRALI_ASAMA, asistKralligi, golKralligi, kazanan, oynandi, oyuncuBul, oyuncuIstatistik, puanDurumu, tarihYaz, turnuvaVerisi,
+  ASAMA_AD, DURUM_AD, MEVKI_KISA, SIRALI_ASAMA, asistKralligi, golKralligi, kazanan, oynandi, oyuncuBul, oyuncuIstatistik, puanDurumu, tarihYaz, turnuvaVerisi,
   type Gol, type Kart, type Mac, type Oyuncu, type Takim,
 } from "@/lib/turnuva";
 import Agac from "./Agac";
@@ -136,7 +136,7 @@ function Icerik({ v }: { v: V }) {
 
       {puan.size > 0 && (
         <section className="s-bolum kap" id="gruplar">
-          <h2>Gruplar</h2>
+          <div className="bas-satir"><h2 className="s-h2">Gruplar</h2><Link className="paylas" href="/turnuva/kura">Kura çekimini izle →</Link></div>
           <p className="s-aciklama">Her gruptan ilk iki takım son 16&apos;ya kalır. Galibiyet 3, beraberlik 1 puan.</p>
           <div className="gruplar">
             {[...puan.entries()].map(([g, satirlar]) => (
@@ -284,7 +284,7 @@ function Kadro({ takim, oyuncular, goller, kartlar }: { takim: Takim; oyuncular:
           return (
             <li key={o.id}>
               <span className="no">{o.numara ?? "–"}</span>
-              <Link className="ad tk-bag" href={`/turnuva/oyuncu/${o.id}`}>{o.ad}{o.yas !== null && <small className="yas"> · {o.yas}</small>}</Link>
+              <Link className="ad tk-bag" href={`/turnuva/oyuncu/${o.id}`}>{o.ad}{o.mevki && <small className="yas"> · {MEVKI_KISA[o.mevki] ?? o.mevki}</small>}{o.yas !== null && <small className="yas"> · {o.yas}</small>}</Link>
               <span className="ist">
                 {i.gol > 0 && <b>{i.gol} gol</b>}{i.asist > 0 && <i>{i.asist} asist</i>}
                 {i.sari > 0 && <span className="kart-s sari" title="Sarı kart">{i.sari}</span>}

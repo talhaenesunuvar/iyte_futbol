@@ -1,3 +1,4 @@
+import type { Metadata, ResolvingMetadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,10 +8,31 @@ import UstMenu from "@/components/UstMenu";
 import AltKisim from "@/components/AltKisim";
 import { ASAMA_AD, oyuncuIstatistik, oyuncuTurnuvasi, turnuvaVerisiIcin, type Mac, type Takim } from "@/lib/turnuva";
 import TakimRozet, { TakimAdi } from "../../TakimRozet";
+import { OG_BASE, SITE_AD } from "@/lib/site";
 
-// Oyuncu sayfasi (Derin, 2026-11-23): yas, gol, asist, sari/kirmizi kart ve hangi macta oldugu.
-// Bolum ve ogrenci no burada YOK; turnuvaVerisiIcin bu alanlari zaten secmez.
-export const metadata = { title: "Oyuncu" };
+// Oyuncu sayfasi (Derin, 2026-11-23/24): fotograf, mevki, bolum, sinif, yas, gol, asist, sari/kirmizi kart ve hangi macta oldugu.
+// Ogrenci no burada YOK; turnuvaVerisiIcin bu alani zaten secmez.
+// Oyuncu sayfalari Google'a GIRMEZ (2026-11-24, Talha onayi): ogrenci adi, fotografi, bolumu arama sonuclarinda cikmasin.
+// Site ici baglantilar izlenir (follow).
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }, parent: ResolvingMetadata): Promise<Metadata> {
+  const id = Number((await params).id);
+  if (!Number.isInteger(id) || id <= 0) notFound();
+  const tid = await oyuncuTurnuvasi(id);
+  const v = tid === null ? null : await turnuvaVerisiIcin(tid);
+  const o = v?.oyuncular.find((x) => x.id === id);
+  if (!v || !o) notFound();
+  const t = v.takimlar.find((x) => x.id === o.takim_id);
+  const i = oyuncuIstatistik(o, v.goller, v.kartlar);
+  const baslik = t ? `${o.ad} · ${t.ad}` : o.ad;
+  const aciklama = [`${o.ad}`, t?.ad, o.mevki, `${i.gol} gol, ${i.asist} asist`].filter(Boolean).join(" · ") + ` (${v.turnuva.ad}).`;
+  const url = `/turnuva/oyuncu/${id}`;
+  const images = (await parent).openGraph?.images ?? [];
+  return {
+    title: baslik, description: aciklama, alternates: { canonical: url },
+    openGraph: { ...OG_BASE, title: `${baslik} · ${SITE_AD}`, description: aciklama, url, images },
+    robots: { index: false, follow: true },
+  };
+}
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   return (
@@ -49,12 +71,20 @@ async function Icerik({ params }: { params: Promise<{ id: string }> }) {
       <section className="kap ek-ust">
         <Link href={t ? `/turnuva/takim/${t.id}` : "/turnuva"} className="ek-geri">← {t?.ad ?? v.turnuva.ad}</Link>
         <div className="ek-kart">
-          <span className="ek-no" aria-label="Forma numarası">{o.numara ?? "–"}</span>
+          {o.foto_v ? (
+            <span className="ek-foto">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/turnuva/oyuncu/${o.id}/foto?v=${o.foto_v}`} alt={o.ad} width={256} height={256} />
+              {o.numara !== null && <b aria-label="Forma numarası">{o.numara}</b>}
+            </span>
+          ) : <span className="ek-no" aria-label="Forma numarası">{o.numara ?? "–"}</span>}
           <div>
             <p className="s-etiket" style={{ color: "rgba(255,255,255,.75)" }}>Oyuncu · {v.turnuva.ad}</p>
             <h1>{o.ad}</h1>
             <p className="ek-alt">
               {t && <Link href={`/turnuva/takim/${t.id}`} style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><TakimRozet t={t} boy={24} />{t.ad}</Link>}
+              {o.mevki && <span className="ek-mevki">{o.mevki}</span>}
+              {(o.bolum || o.sinif) && <span>{[o.bolum, o.sinif].filter(Boolean).join(" · ")}</span>}
               {o.yas !== null && <span>{o.yas} yaşında</span>}
             </p>
           </div>

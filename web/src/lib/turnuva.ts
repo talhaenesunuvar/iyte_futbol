@@ -25,8 +25,9 @@ async function turnuvaYukle(sql: postgres.Sql, id: number): Promise<TurnuvaVeris
   const maclar: Mac[] = ham.map((m) => ({ ...m, zaman: m.zaman ? new Date(m.zaman).toISOString() : null }));
   const goller = await sql<Gol[]>`select g.id, g.mac_id, g.takim_id, g.oyuncu, g.oyuncu_id, g.asist, g.asist_id, g.dakika
     from gol g join mac m on m.id = g.mac_id where m.turnuva_id = ${id} order by g.mac_id, g.dakika nulls last, g.id`;
-  // GIZLILIK: bolum ve ogrenci_no burada secilmez (bu veri herkese acik sayfalara gider)
-  const oyuncular = await sql<Oyuncu[]>`select o.id, o.takim_id, o.ad, o.numara, o.yas from oyuncu o join takim k on k.id = o.takim_id
+  // GIZLILIK: ogrenci_no burada secilmez (bu veri herkese acik sayfalara gider). Fotografin kendisi de gomulmez, yalniz ozeti.
+  const oyuncular = await sql<Oyuncu[]>`select o.id, o.takim_id, o.ad, o.numara, o.yas, o.bolum, o.sinif, o.mevki,
+    case when o.foto is null then null else left(md5(o.foto), 10) end as foto_v from oyuncu o join takim k on k.id = o.takim_id
     where k.turnuva_id = ${id} order by o.takim_id, o.numara nulls last, o.ad`;
   const kartlar = await sql<Kart[]>`select x.id, x.mac_id, x.takim_id, x.oyuncu, x.oyuncu_id, x.renk, x.dakika
     from kart x join mac m on m.id = x.mac_id where m.turnuva_id = ${id} order by x.mac_id, x.dakika nulls last, x.id`;
@@ -94,6 +95,16 @@ export async function takimLogosu(id: number): Promise<string | null> {
   return r?.logo ?? null;
 }
 
+// Oyuncu fotografi (data URL). Panel kaydedince ETIKET.turnuva dusurulur.
+export async function oyuncuFotosu(id: number): Promise<string | null> {
+  "use cache";
+  cacheTag(ETIKET.turnuva);
+  cacheLife("hours");
+  const sql = await db();
+  const [r] = await sql<{ foto: string | null }[]>`select foto from oyuncu where id = ${id}`;
+  return r?.foto ?? null;
+}
+
 export type CanliOzet = { ev: string; dep: string; evGol: number; depGol: number };
 export type TurnuvaOzet = {
   ad: string; sezon: string; durum: Durum; takim: number; mac: number; oynanan: number; gol: number;
@@ -138,10 +149,10 @@ export async function turnuvaPanel(id: number) {
   return turnuvaYukle(sql, id);
 }
 
-// YALNIZ PANEL (yetkiGerekli sonrasi): oyuncunun bolum ve ogrenci no'su. Onbelleksiz, herkese acik sayfalarda kullanma.
+// YALNIZ PANEL (yetkiGerekli sonrasi): oyuncunun ogrenci no'su. Onbelleksiz, herkese acik sayfalarda kullanma.
 export async function oyuncuGizli(turnuvaId: number): Promise<Map<number, OyuncuGizli>> {
   const sql = await db();
-  const l = await sql<OyuncuGizli[]>`select o.id, o.bolum, o.ogrenci_no from oyuncu o join takim k on k.id = o.takim_id where k.turnuva_id = ${turnuvaId}`;
+  const l = await sql<OyuncuGizli[]>`select o.id, o.ogrenci_no from oyuncu o join takim k on k.id = o.takim_id where k.turnuva_id = ${turnuvaId}`;
   return new Map(l.map((x) => [x.id, x]));
 }
 
@@ -177,4 +188,32 @@ export async function skorTazele(sql: postgres.Sql, macId: number) {
     ev_gol = (select count(*)::int from gol g where g.mac_id = m.id and g.takim_id = m.ev_id),
     dep_gol = (select count(*)::int from gol g where g.mac_id = m.id and g.takim_id = m.dep_id)
     where m.id = ${macId} and m.canli`;
+}
+
+// Kura ekrani (/turnuva/kura, onbellekli): takimlar + kayitli cekim sirasi (ham JSON; src/lib/kura.ts kuraCoz/kuraUzlastir).
+// id verilmezse vitrin turnuvasi. Panel kurasi ETIKET.turnuva'yi dusurur.
+export type KuraVerisi = {
+  turnuva: { id: number; ad: string; sezon: string; kontenjan: number; ornek: boolean };
+  takimlar: Pick<Takim, "id" | "ad" | "grup" | "torba" | "logo_v" | "renk">[];
+  kura: string | null;
+  kuraZaman: string | null;
+};
+export async function kuraVerisi(id: number | null): Promise<KuraVerisi | null> {
+  "use cache";
+  cacheTag(ETIKET.turnuva);
+  cacheLife("minutes");
+  const sql = await db();
+  const tid = id ?? (await vitrinId(sql));
+  if (tid === null) return null;
+  const [t] = await sql<(KuraVerisi["turnuva"] & { kura: string | null; kura_zaman: Date | null })[]>`
+    select id, ad, sezon, kontenjan, ornek, kura, kura_zaman from turnuva where id = ${tid}`;
+  if (!t) return null;
+  const takimlar = await sql<KuraVerisi["takimlar"]>`select id, ad, grup, torba, renk, case when logo is null then null else left(md5(logo), 10) end as logo_v
+    from takim where turnuva_id = ${tid} order by torba nulls last, ad`;
+  return {
+    turnuva: { id: t.id, ad: t.ad, sezon: t.sezon, kontenjan: t.kontenjan, ornek: t.ornek },
+    takimlar: [...takimlar],
+    kura: t.kura,
+    kuraZaman: t.kura_zaman ? new Date(t.kura_zaman).toISOString() : null,
+  };
 }

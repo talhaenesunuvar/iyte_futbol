@@ -7,7 +7,7 @@ import { yetkiGerekli } from "@/lib/yetki";
 import { bitir, metin, tamsayi } from "@/lib/islem";
 import { ETIKET } from "@/lib/ayar";
 import {
-  DURUMLAR, ELEME, ELEME_BOY, GRUP_HARF, elemeEslesme, grupFiksturu, ilerlet, puanDurumu, renkGecerli, skorTazele, turnuvaPanel, yereldenIso,
+  DURUMLAR, ELEME, ELEME_BOY, GRUP_HARF, MEVKILER, SINIFLAR, elemeEslesme, grupFiksturu, ilerlet, puanDurumu, renkGecerli, skorTazele, turnuvaPanel, yereldenIso,
   type Asama, type Durum,
 } from "@/lib/turnuva";
 
@@ -28,6 +28,15 @@ function logoDegeri(f: FormData): string | null | undefined {
   if (!v) return undefined;
   if (v === "sil") return null;
   if (v.length > LOGO_AZAMI || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(v)) throw new Error("Logo geçersiz ya da çok büyük.");
+  return v;
+}
+// Oyuncu fotografi: istemci 256 px kare JPEG'e kirpip gonderir. "" = degistirme, "sil" = kaldir.
+const FOTO_AZAMI = 120_000;
+function fotoDegeri(f: FormData): string | null | undefined {
+  const v = String(f.get("foto") ?? "");
+  if (!v) return undefined;
+  if (v === "sil") return null;
+  if (v.length > FOTO_AZAMI || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(v)) throw new Error("Fotoğraf geçersiz ya da çok büyük.");
   return v;
 }
 const renkDegeri = (f: FormData) => {
@@ -136,34 +145,45 @@ export async function takimSilAction(f: FormData) {
   bitir(ETIKET.turnuva);
 }
 
-// Kura: her torbadan her gruba bir takim; torbasiz takimlar en az takimi olan gruplara
+// Kura: her torbadan her gruba bir takim; torbasiz takimlar en az takimi olan gruplara.
+// Cekim SIRASI da turnuva.kura'ya JSON olarak yazilir ([{takim_id, torba, grup}, ...]); /turnuva/kura bu sirayi
+// animasyonla oynatir. Kural src/lib/kura.ts kuraUret ile ayni (oradaki deneme kurasi istemcide calisir).
 export async function kuraCekAction(f: FormData) {
   await yetkiGerekli();
   const tid = kimlik(f, "turnuva_id");
   const sql = await db();
   const [t] = await sql<{ kontenjan: number }[]>`select kontenjan from turnuva where id = ${tid}`;
   if (!t) geri(null, "Turnuva bulunamadı.");
-  const takimlar = await sql<{ id: number; torba: number | null }[]>`select id, torba from takim where turnuva_id = ${tid}`;
+  const takimlar = await sql<{ id: number; torba: number | null }[]>`select id, torba from takim where turnuva_id = ${tid} order by id`;
   if (takimlar.length < 2) geri(tid, "Kura için en az 2 takım gerekli.", "takimlar");
   const G = Math.min(GRUP_HARF.length, Math.max(1, Math.round(t.kontenjan / 4)));
   const say = new Array(G).fill(0);
-  const atama: { id: number; grup: string }[] = [];
+  // Aday gruplardan en az takimi olanlar arasinda rastgele biri (tam torbalarda: bu torbadan henuz takim almamis gruplardan biri)
+  const sec = (aday: number[]) => {
+    const en = Math.min(...aday.map((g) => say[g]));
+    const uygun = aday.filter((g) => say[g] === en);
+    return uygun[randomInt(uygun.length)];
+  };
+  const sira: { takim_id: number; torba: number | null; grup: string }[] = [];
   const torbalar = [...new Set(takimlar.map((k) => k.torba).filter((x): x is number => x !== null))].sort((a, b) => a - b);
   for (const p of torbalar) {
-    // Her torbada gruplari da karistir ki ilk gruplar hep dolmasin
-    const sira = karistir([...Array(G).keys()]).sort((a, b) => say[a] - say[b]);
-    karistir(takimlar.filter((k) => k.torba === p)).forEach((k, i) => {
-      const g = sira[i % G];
+    // 1. torbanin tum takimlari rastgele sirayla, sonra 2. torba...; torbada G'den fazla takim varsa yeni tur baslar
+    let alan = new Set<number>();
+    for (const k of karistir(takimlar.filter((x) => x.torba === p))) {
+      if (alan.size === G) alan = new Set();
+      const g = sec([...Array(G).keys()].filter((i) => !alan.has(i)));
+      alan.add(g);
       say[g]++;
-      atama.push({ id: k.id, grup: GRUP_HARF[g] });
-    });
+      sira.push({ takim_id: k.id, torba: p, grup: GRUP_HARF[g] });
+    }
   }
   for (const k of karistir(takimlar.filter((x) => x.torba === null))) {
-    const g = say.indexOf(Math.min(...say));
+    const g = sec([...Array(G).keys()]);
     say[g]++;
-    atama.push({ id: k.id, grup: GRUP_HARF[g] });
+    sira.push({ takim_id: k.id, torba: null, grup: GRUP_HARF[g] });
   }
-  for (const a of atama) await sql`update takim set grup = ${a.grup} where id = ${a.id}`;
+  for (const a of sira) await sql`update takim set grup = ${a.grup} where id = ${a.takim_id}`;
+  await sql`update turnuva set kura = ${JSON.stringify(sira)}, kura_zaman = now() where id = ${tid}`;
   bitir(ETIKET.turnuva);
 }
 
@@ -359,6 +379,7 @@ async function takimKontrol(tid: number, takimId: number) {
 }
 
 // Oyuncu alanlari. yas herkese acik; bolum ve ogrenci_no yalniz panelde gorunur.
+const secenek = (v: string, l: readonly string[]) => (l.includes(v) ? v : "");
 function oyuncuAlanlari(f: FormData) {
   const no = tamsayi(f, "numara"), yas = tamsayi(f, "yas");
   return {
@@ -366,7 +387,10 @@ function oyuncuAlanlari(f: FormData) {
     numara: no !== null && no >= 0 && no <= 99 ? no : null,
     yas: yas !== null && yas >= 10 && yas <= 80 ? yas : null,
     bolum: metin(f, "bolum", 80),
+    sinif: secenek(metin(f, "sinif", 20), SINIFLAR),
+    mevki: secenek(metin(f, "mevki", 20), MEVKILER),
     ogrenci_no: metin(f, "ogrenci_no", 20).replace(/[^0-9A-Za-z]/g, ""),
+    foto: fotoDegeri(f),
   };
 }
 
@@ -378,7 +402,8 @@ export async function oyuncuEkleAction(f: FormData) {
   if (o.ad.length < 2) geri(tid, "Oyuncu adı gerekli.", `kadro-${takimId}`);
   if (!(await takimKontrol(tid, takimId))) geri(tid, "Takım bulunamadı.", "kadrolar");
   const sql = await db();
-  await sql`insert into oyuncu (takim_id, ad, numara, yas, bolum, ogrenci_no) values (${takimId}, ${o.ad}, ${o.numara}, ${o.yas}, ${o.bolum}, ${o.ogrenci_no})`;
+  await sql`insert into oyuncu (takim_id, ad, numara, yas, bolum, sinif, mevki, ogrenci_no, foto)
+    values (${takimId}, ${o.ad}, ${o.numara}, ${o.yas}, ${o.bolum}, ${o.sinif}, ${o.mevki}, ${o.ogrenci_no}, ${o.foto ?? null})`;
   bitir(ETIKET.turnuva);
 }
 
@@ -392,7 +417,9 @@ export async function oyuncuGuncelleAction(f: FormData) {
   const [eski] = await sql<{ takim_id: number }[]>`select o.takim_id from oyuncu o join takim k on k.id = o.takim_id where o.id = ${id} and k.turnuva_id = ${tid}`;
   if (!eski) geri(tid, "Oyuncu bulunamadı.", "kadrolar");
   if (o.ad.length < 2) geri(tid, "Oyuncu adı gerekli.", `kadro-${eski.takim_id}`);
-  await sql`update oyuncu set ad = ${o.ad}, numara = ${o.numara}, yas = ${o.yas}, bolum = ${o.bolum}, ogrenci_no = ${o.ogrenci_no} where id = ${id}`;
+  await sql`update oyuncu set ad = ${o.ad}, numara = ${o.numara}, yas = ${o.yas}, bolum = ${o.bolum}, sinif = ${o.sinif}, mevki = ${o.mevki},
+    ogrenci_no = ${o.ogrenci_no} where id = ${id}`;
+  if (o.foto !== undefined) await sql`update oyuncu set foto = ${o.foto} where id = ${id}`;
   await sql`update gol set oyuncu = ${o.ad} where oyuncu_id = ${id}`;
   await sql`update gol set asist = ${o.ad} where asist_id = ${id}`;
   await sql`update kart set oyuncu = ${o.ad} where oyuncu_id = ${id}`;

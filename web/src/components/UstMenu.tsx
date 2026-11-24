@@ -25,7 +25,7 @@ export default function UstMenu() {
         {/* Logo ana sayfaya (Kale Agi) doner. */}
         <Link className="ust-m" href="/">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/img/logo-bas.webp" alt="" width={34} height={37} />
+          <img src="/img/logo-bas-80.webp" alt="" width={34} height={37} />
           <span>İYTE Futbol</span>
         </Link>
         <nav aria-label="Ana menü">

@@ -52,6 +52,7 @@ a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var
 .alt-kimlik small{font-size:14px;opacity:.7}
 .alt-hukuk{display:flex;flex-wrap:wrap;align-items:center;gap:6px 20px;font-size:14px}
 .alt-hukuk small{font-size:14px;opacity:.7}
+.alt-hukuk a{color:inherit;font-weight:600;text-underline-offset:3px}
 .alt a{text-decoration:none;font-weight:600}
 .alt a:hover{color:var(--bordo)}
 
@@ -142,3 +143,6 @@ a:focus-visible,button:focus-visible{border-radius:var(--k-s)}
 .s-ozet strong{font:italic 800 clamp(28px,3vw,36px)/1.05 var(--f-b)}
 .s-ozet small{opacity:.85;font-size:14px}
 button.btn{font-family:var(--f-g)}
+
+/* Gorsel olarak gizli, ekran okuyucu ve arama motoru icin metin (2026-11-24) */
+.gizli{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

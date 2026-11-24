@@ -91,5 +91,6 @@ export function topCiz(
   x.restore();
 }
 
-// "Bize ulas" butonlari WhatsApp sohbetine gider
-export const WHATSAPP = "https://wa.me/905511378177";
+// "Bize ulas" butonlari topluluk e-postasina gider (2026-11-24, Derin: sorunlar kisisel numarasina gelmesin)
+export const EPOSTA = "iytefutbol@gmail.com";
+export const ILETISIM = `mailto:${EPOSTA}`;

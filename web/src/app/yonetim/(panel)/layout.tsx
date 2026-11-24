@@ -12,7 +12,7 @@ export default function PanelDuzen({ children }: { children: React.ReactNode }) 
       <aside className="y-yan">
         <Link href="/yonetim" className="y-marka">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/img/logo-bas.webp" alt="" width={28} height={30} />
+          <img src="/img/logo-bas-80.webp" alt="" width={28} height={30} />
           <span>Yönetim</span>
         </Link>
         {/* usePathname dinamik rotada calisma aninda gelir; Suspense olmadan prerender durur */}
