@@ -20,7 +20,14 @@ const PENCERE_DK = 15;
 const AZAMI_DENEME = 10;
 
 function sir() {
-  const s = process.env.OTURUM_SIRRI || process.env.YONETIM_SIFRESI;
+  const o = process.env.OTURUM_SIRRI;
+  if (o) return o;
+  // Uretimde ayri OTURUM_SIRRI ZORUNLU (fail-closed): yoksa imza panel sifresine duserdi ve sizan bir cerezden
+  // sifre cevrimdisi kirilabilirdi. Gelistirme/yerelde YONETIM_SIFRESI'ne dusmesi sorun degil.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("OTURUM_SIRRI üretimde tanımlı olmalı (oturum imzası panel şifresinden bağımsız olsun).");
+  }
+  const s = process.env.YONETIM_SIFRESI;
   if (!s) throw new Error("YONETIM_SIFRESI tanımlı değil.");
   return s;
 }
