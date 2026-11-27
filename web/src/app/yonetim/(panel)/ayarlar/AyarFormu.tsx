@@ -15,12 +15,24 @@ export default function AyarFormu({ a }: { a: Ayarlar }) {
           <label>Kapora (TL)<input name="forma_kapora" type="number" min={0} defaultValue={a.forma_kapora} required /></label>
           <label>Parti kişi sayısı<input name="forma_hedef" type="number" min={1} max={100} defaultValue={a.forma_hedef} required /></label>
         </div>
+        <div className="y-satir">
+          <label>Arkaya isim + numara (TL)<input name="forma_yazi_ucret" type="number" min={0} defaultValue={a.forma_yazi_ucret} required /></label>
+          <label>3D logo (TL)<input name="forma_logo3d_ucret" type="number" min={0} defaultValue={a.forma_logo3d_ucret} required /></label>
+        </div>
         <label>Bedenler (virgülle)<input name="forma_bedenler" defaultValue={a.forma_bedenler} /></label>
         <div className="y-satir">
           <label>IBAN<input name="iban" defaultValue={a.iban} placeholder="TR00 0000 0000 0000 0000 0000 00" autoComplete="off" /></label>
           <label>Alıcı adı<input name="iban_alici" defaultValue={a.iban_alici} /></label>
         </div>
         <p className="y-soluk">IBAN boşken sitede &quot;IBAN bilgisi kısa süre içinde paylaşılacak&quot; yazar.</p>
+      </section>
+
+      <section className="y-kart">
+        <h2>WhatsApp grupları</h2>
+        <label>Ana sayfadaki grup düğmeleri (her satır: Ad | davet linki)
+          <textarea name="whatsapp_gruplar" rows={3} defaultValue={a.whatsapp_gruplar} placeholder={"Duyuru grubu | https://chat.whatsapp.com/...\nHalı saha grubu | https://chat.whatsapp.com/..."} />
+        </label>
+        <p className="y-soluk">Boşsa ana sayfada WhatsApp düğmesi görünmez. Yalnız chat.whatsapp.com davet linkleri kabul edilir.</p>
       </section>
 
       <section className="y-kart">

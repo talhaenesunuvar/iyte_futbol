@@ -28,7 +28,13 @@ export const fiyatlar = (a: Ayarlar) => ({
   kapora: sayi(a.forma_kapora, 100),
   hedef: Math.max(1, sayi(a.forma_hedef, 5)),
   bedenler: a.forma_bedenler.split(",").map((b) => b.trim()).filter(Boolean),
+  yazi: sayi(a.forma_yazi_ucret, 25),
+  logo3d: sayi(a.forma_logo3d_ucret, 50),
 });
+
+// Siparis toplami: forma + (arkaya isim/numara) + (3D logo). Istemci onizlemesi ve sunucu ayni hesabi kullanir.
+export const tutarHesap = (f: { fiyat: number; yazi: number; logo3d: number }, o: { yazi: boolean; logo3d: boolean }) =>
+  f.fiyat + (o.yazi ? f.yazi : 0) + (o.logo3d ? f.logo3d : 0);
 
 // "Ahmet Yilmaz" -> "Ahmet Y."
 export function basHarf(ad: string) {
@@ -38,7 +44,7 @@ export function basHarf(ad: string) {
 }
 
 export type FormaOzet = { fiyat: number; kapora: number; hedef: number; onayli: number; bekleyen: number; partiNo: number | null };
-export type FormaVitrin = FormaOzet & { kisiler: { ad: string; onayli: boolean }[]; bedenler: string[]; iban: string; ibanAlici: string };
+export type FormaVitrin = FormaOzet & { kisiler: { ad: string; onayli: boolean }[]; bedenler: string[]; iban: string; ibanAlici: string; yaziUcret: number; logo3dUcret: number };
 
 // Herkese acik: en eski acik parti (yoksa son parti degil, null) ve ilerleme
 export async function formaVitrin(): Promise<FormaVitrin> {
@@ -64,6 +70,8 @@ export async function formaVitrin(): Promise<FormaVitrin> {
     bedenler: f.bedenler,
     iban: a.iban,
     ibanAlici: a.iban_alici,
+    yaziUcret: f.yazi,
+    logo3dUcret: f.logo3d,
   };
 }
 
@@ -75,10 +83,10 @@ export async function formaOzet(): Promise<FormaOzet> {
   return { fiyat: v.fiyat, kapora: v.kapora, hedef: v.hedef, onayli: v.onayli, bekleyen: v.bekleyen, partiNo: v.partiNo };
 }
 
-export type SiparisGirdi = { ad: string; telefon: string; beden: string; arka_isim: string; numara: number | null; ornek?: boolean; durum?: SiparisDurum };
+export type SiparisGirdi = { ad: string; telefon: string; beden: string; arka_isim: string; numara: number | null; yazi: boolean; logo3d: boolean; ornek?: boolean; durum?: SiparisDurum };
 
 // Siparisi hedefin altinda kisi olan en eski acik partiye ekler; yoksa yeni parti acar. Kod doner.
-export async function siparisEkle(g: SiparisGirdi): Promise<{ kod: string; partiId: number }> {
+export async function siparisEkle(g: SiparisGirdi): Promise<{ kod: string; partiId: number; tutar: number }> {
   const sql = await db();
   const f = fiyatlar(await ayarlarTaze());
   // Islem (transaction) kullanilmaz: yerel PGlite cogullayicisinda guvenilir degil. Ayni anda iki kayit
@@ -94,9 +102,10 @@ export async function siparisEkle(g: SiparisGirdi): Promise<{ kod: string; parti
     for (let i = 0; ; i++) {
       const kod = kisaKod("F");
       try {
-        await t`insert into forma_siparis (parti_id, ad, telefon, beden, arka_isim, numara, kod, durum, ornek)
-          values (${partiId}, ${g.ad}, ${g.telefon}, ${g.beden}, ${g.arka_isim}, ${g.numara}, ${kod}, ${g.durum ?? "kapora_bekliyor"}, ${g.ornek ?? false})`;
-        return { kod, partiId };
+        const tutar = tutarHesap(f, g);
+        await t`insert into forma_siparis (parti_id, ad, telefon, beden, arka_isim, numara, yazi, logo3d, tutar, kod, durum, ornek)
+          values (${partiId}, ${g.ad}, ${g.telefon}, ${g.beden}, ${g.yazi ? g.arka_isim : ""}, ${g.yazi ? g.numara : null}, ${g.yazi}, ${g.logo3d}, ${tutar}, ${kod}, ${g.durum ?? "kapora_bekliyor"}, ${g.ornek ?? false})`;
+        return { kod, partiId, tutar };
       } catch (e) {
         if ((e as { code?: string }).code !== "23505" || i > 3) throw e;
       }

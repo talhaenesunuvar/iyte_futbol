@@ -94,3 +94,24 @@ export function topCiz(
 // "Bize ulas" butonlari topluluk e-postasina gider (2026-11-24, Derin: sorunlar kisisel numarasina gelmesin)
 export const EPOSTA = "iytefutbol@gmail.com";
 export const ILETISIM = `mailto:${EPOSTA}`;
+
+// WhatsApp topluluk gruplari (Derin, 2026-11-27): panel Ayarlar'da her satir "Ad | https://chat.whatsapp.com/...".
+// Yalniz WhatsApp davet adresleri kabul edilir (baska siteye yonlendirme olmasin).
+export type WaGrup = { ad: string; url: string };
+const WA_DAVET = /^https:\/\/(chat\.whatsapp\.com\/[A-Za-z0-9]{10,40}|whatsapp\.com\/channel\/[A-Za-z0-9]{10,40})\/?(\?[\w=&.-]*)?$/;
+function waSatirlar(m: string) {
+  return m.split(/\r?\n/).map((s) => s.trim()).filter(Boolean).map((s) => {
+    const i = s.lastIndexOf("|");
+    const ad = (i >= 0 ? s.slice(0, i) : "").trim().slice(0, 40);
+    const url = (i >= 0 ? s.slice(i + 1) : s).trim();
+    return { ad: ad || "WhatsApp grubu", url, satir: s };
+  });
+}
+export const whatsappGruplari = (m: string): WaGrup[] =>
+  waSatirlar(m).filter((x) => WA_DAVET.test(x.url)).slice(0, 8).map(({ ad, url }) => ({ ad, url }));
+export function whatsappHata(m: string): string | null {
+  const l = waSatirlar(m);
+  if (l.length > 8) return "En çok 8 WhatsApp grubu eklenebilir.";
+  const kotu = l.find((x) => !WA_DAVET.test(x.url));
+  return kotu ? `WhatsApp linki geçersiz: "${kotu.satir.slice(0, 60)}". Satır "Ad | https://chat.whatsapp.com/..." biçiminde olmalı.` : null;
+}

@@ -9,7 +9,7 @@ import ElleSiparis from "./ElleSiparis";
 export const metadata = { title: "Forma siparişleri" };
 
 type Parti = { id: number; hedef: number; durum: PartiDurum; olusturma: Date };
-type Siparis = { id: number; parti_id: number; ad: string; telefon: string; beden: string; arka_isim: string; numara: number | null; kod: string; durum: SiparisDurum; ornek: boolean; olusturma: Date };
+type Siparis = { id: number; parti_id: number; ad: string; telefon: string; beden: string; arka_isim: string; numara: number | null; yazi: boolean; logo3d: boolean; tutar: number | null; kod: string; durum: SiparisDurum; ornek: boolean; olusturma: Date };
 
 const ROZET: Record<SiparisDurum, string> = { kapora_bekliyor: "sari", kapora_alindi: "yesil", odendi: "yesil", iptal: "gri" };
 
@@ -24,7 +24,7 @@ export default async function FormaPanel() {
   const bedenSirali = [...f.bedenler, ...beden.map((b) => b.beden).filter((b) => !f.bedenler.includes(b))];
 
   const odemeMesaji = (s: Siparis) =>
-    `Merhaba ${s.ad.split(" ")[0]}, İYTE Futbol forma partisi doldu! Kalan ödeme: ${(f.fiyat - f.kapora).toLocaleString("tr-TR")} TL.` +
+    `Merhaba ${s.ad.split(" ")[0]}, İYTE Futbol forma partisi doldu! Kalan ödeme: ${Math.max(0, (s.tutar ?? f.fiyat) - f.kapora).toLocaleString("tr-TR")} TL.` +
     (a.iban ? ` IBAN: ${a.iban}${a.iban_alici ? ` (${a.iban_alici})` : ""}.` : "") +
     ` Açıklamaya sipariş kodunu yaz: ${s.kod}. Teşekkürler!`;
 
@@ -32,7 +32,8 @@ export default async function FormaPanel() {
     <>
       <div className="y-baslik">
         <h1>Forma siparişleri</h1>
-        <p className="y-soluk">Fiyat {f.fiyat} TL · kapora {f.kapora} TL · parti hedefi {f.hedef} kişi (Ayarlar&apos;dan değişir).{!a.iban && " IBAN girilmemiş: Ayarlar'dan ekle."}</p>
+        <p className="y-soluk">Fiyat {f.fiyat} TL · isim/numara +{f.yazi} TL · 3D logo +{f.logo3d} TL · kapora {f.kapora} TL · parti hedefi {f.hedef} kişi (Ayarlar&apos;dan değişir).{!a.iban && " IBAN girilmemiş: Ayarlar'dan ekle."}</p>
+        <div className="y-dugmeler"><a className="y-btn" href="/yonetim/forma/excel" download>Excel olarak indir</a></div>
       </div>
 
       <section className="y-kart">
@@ -64,7 +65,7 @@ export default async function FormaPanel() {
             {liste.length === 0 ? <p className="y-bos">Bu partide sipariş yok.</p> : (
               <div className="y-tablo-kap">
                 <table className="y-tablo">
-                  <thead><tr><th>Kod</th><th>Ad</th><th>Telefon</th><th>Beden</th><th>Arka</th><th>Durum</th><th className="sag">İşlem</th></tr></thead>
+                  <thead><tr><th>Kod</th><th>Ad</th><th>Telefon</th><th>Beden</th><th>Arka</th><th>3D logo</th><th>Tutar</th><th>Durum</th><th className="sag">İşlem</th></tr></thead>
                   <tbody>
                     {liste.map((s) => (
                       <tr key={s.id}>
@@ -72,7 +73,9 @@ export default async function FormaPanel() {
                         <td>{s.ad}</td>
                         <td><a href={`tel:+${waNumara(s.telefon)}`}>0{s.telefon}</a></td>
                         <td>{s.beden}</td>
-                        <td>{s.arka_isim || "—"} {s.numara ?? ""}</td>
+                        <td>{s.yazi ? `${s.arka_isim || "—"} ${s.numara ?? ""}` : "Yazısız"}</td>
+                        <td>{s.logo3d ? "Var" : "—"}</td>
+                        <td>{(s.tutar ?? f.fiyat).toLocaleString("tr-TR")} TL</td>
                         <td><span className={"y-rozet " + ROZET[s.durum]}>{SIPARIS_DURUM[s.durum]}</span></td>
                         <td className="sag">
                           <div className="y-dugmeler" style={{ justifyContent: "flex-end" }}>

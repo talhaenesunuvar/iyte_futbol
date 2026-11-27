@@ -12,7 +12,12 @@ export const VARSAYILAN_AYAR: Record<string, string> = {
   forma_fiyat: "500",
   forma_kapora: "100",
   forma_hedef: "5",
-  forma_bedenler: "S,M,L,XL,XXL",
+  forma_bedenler: "XS,S,M,L,XL,XXL,3XL,4XL",
+  // Opsiyon ucretleri (Derin, 2026-11-27): arkaya isim + numara 25 TL, 3D logo 50 TL
+  forma_yazi_ucret: "25",
+  forma_logo3d_ucret: "50",
+  // Ana sayfadaki WhatsApp grup dugmeleri: her satir "Ad | https://chat.whatsapp.com/..."
+  whatsapp_gruplar: "",
   okul_randevu_url: "https://ubys.iyte.edu.tr",
   okul_saha_bilgi: "Okul sahası öğrenci e-postasıyla, okulun sisteminden alınır.",
   koy_url: "/koy-sahasi",

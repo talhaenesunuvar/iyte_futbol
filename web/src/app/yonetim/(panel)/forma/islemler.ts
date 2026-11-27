@@ -39,11 +39,13 @@ export async function elleSiparisAction(_: ElleSonuc, f: FormData): Promise<Elle
   const arka = metin(f, "arka_isim", 40).toLocaleUpperCase("tr").slice(0, 12);
   const numara = tamsayi(f, "numara");
   const kaporaAlindi = f.get("kapora") === "on";
+  const logo3d = f.get("logo3d") === "on";
+  const yazi = !!arka || (numara !== null && numara >= 1 && numara <= 99);
   if (!ad) return { hata: "Ad gerekli." };
   if (!telefonGecerliMi(tel)) return { hata: "Telefon geçersiz." };
   if (!bedenler.includes(beden)) return { hata: "Beden seç." };
-  const r = await siparisEkle({ ad, telefon: telefonNormal(tel), beden, arka_isim: arka, numara: numara && numara >= 1 && numara <= 99 ? numara : null, durum: kaporaAlindi ? "kapora_alindi" : "kapora_bekliyor" });
+  const r = await siparisEkle({ ad, telefon: telefonNormal(tel), beden, arka_isim: arka, numara: numara && numara >= 1 && numara <= 99 ? numara : null, yazi, logo3d, durum: kaporaAlindi ? "kapora_alindi" : "kapora_bekliyor" });
   await partiDurumGuncelle(r.partiId);
   bitir(ETIKET.forma);
-  return { tamam: `Eklendi: ${r.kod}` };
+  return { tamam: `Eklendi: ${r.kod} · ${r.tutar.toLocaleString("tr-TR")} TL` };
 }

@@ -5,20 +5,25 @@ import { yetkiGerekli } from "@/lib/yetki";
 import { bitir, metin } from "@/lib/islem";
 import { ETIKET } from "@/lib/ayar";
 import { VARSAYILAN_AYAR } from "@/lib/tohum";
+import { whatsappHata } from "@/lib/ortak";
 
 export type AyarSonuc = { hata?: string; tamam?: boolean };
 
-const SAYISAL = new Set(["forma_fiyat", "forma_kapora", "forma_hedef"]);
+const SAYISAL = new Set(["forma_fiyat", "forma_kapora", "forma_hedef", "forma_yazi_ucret", "forma_logo3d_ucret"]);
 
 export async function ayarKaydet(_: AyarSonuc, f: FormData): Promise<AyarSonuc> {
   await yetkiGerekli();
   const yeni: [string, string][] = [];
   for (const k of Object.keys(VARSAYILAN_AYAR)) {
     if (!f.has(k)) continue;
-    let v = metin(f, k, 600);
+    let v = metin(f, k, k === "whatsapp_gruplar" ? 2000 : 600);
     if (SAYISAL.has(k)) {
       const n = Number(v);
       if (!Number.isInteger(n) || n < 0) return { hata: "Fiyat, kapora ve kişi sayısı tam sayı olmalı." };
+    }
+    if (k === "whatsapp_gruplar") {
+      const kotu = whatsappHata(v);
+      if (kotu) return { hata: kotu };
     }
     if (k === "iban") v = v.replace(/\s+/g, "").toUpperCase().replace(/(.{4})/g, "$1 ").trim();
     if (k === "iban" && v && !/^TR\d{2}( ?\d{4}){5} ?\d{2}$/.test(v)) return { hata: "IBAN TR ile başlayan 26 karakter olmalı." };

@@ -25,10 +25,10 @@ export default async function Page() {
   const kalan = Math.max(0, v.hedef - v.onayli);
   const oran = Math.min(100, Math.round((v.onayli / v.hedef) * 100));
   const adimlar: [string, string][] = [
-    ["Siparişini ver", "Bedenini, forma arkasına yazılacak ismi ve numaranı seç."],
+    ["Formanı hazırla", `Bedenini seç (${v.bedenler[0] ?? "XS"}–${v.bedenler[v.bedenler.length - 1] ?? "4XL"}). Arkaya isim ve numara +${TL(v.yaziUcret)}, 3D logo +${TL(v.logo3dUcret)}; ikisi de isteğe bağlı.`],
     ["Kaporanı bırak", `${TL(v.kapora)} kaporayı IBAN'a gönder, açıklamaya sipariş kodunu yaz.`],
     ["Parti dolsun", `Toplu üretim için ${v.hedef} kişi gerekiyor. Kaporası onaylanan herkes sayılır.`],
-    ["Kalanı öde", `Parti dolunca sana yazıyoruz; kalan ${TL(v.fiyat - v.kapora)} ödenince üretime giriyor.`],
+    ["Kalanı öde", "Parti dolunca sana yazıyoruz; seçeneklerine göre kalan tutar ödenince üretime giriyor."],
   ];
   return (
     <div className="s-sayfa t-forma">
@@ -40,7 +40,7 @@ export default async function Page() {
           <p className="s-soz">Topluluğun forması geldi. Tek tek değil, parti parti üretiliyor: {v.hedef} kişi olunca sipariş veriliyor.</p>
           <div className="s-dugme">
             <a className="btn" href="#siparis">Sipariş ver</a>
-            <span className="fiyat">{TL(v.fiyat)} <small>· kapora {TL(v.kapora)}</small></span>
+            <span className="fiyat">{TL(v.fiyat)} <small>· kapora {TL(v.kapora)} · seçenekler isteğe bağlı</small></span>
           </div>
         </section>
 
@@ -74,7 +74,7 @@ export default async function Page() {
           </ol>
         </section>
 
-        <FormaIstemci bedenler={v.bedenler} kapora={v.kapora} />
+        <FormaIstemci bedenler={v.bedenler} fiyat={v.fiyat} kapora={v.kapora} yaziUcret={v.yaziUcret} logo3dUcret={v.logo3dUcret} />
       </main>
       <AltKisim />
     </div>

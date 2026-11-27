@@ -21,10 +21,41 @@
   .adimlar h3{font-family:var(--f-g);font-weight:700;font-size:20px}
   .adimlar p{font-size:16px;opacity:.85}
 
-  .lansman{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(12px,3vw,40px);padding-top:0}
-  .lansman figure{background:var(--acik);border-radius:var(--k-xl);padding:clamp(18px,4vw,48px);display:grid;gap:12px;justify-items:center}
-  .lansman svg{width:min(100%,340px);height:auto;filter:drop-shadow(0 18px 30px var(--golge))}
-  .lansman figcaption{font-weight:700;font-size:15px}
+  /* Siparis duzenleyici (2026-11-27): solda yapiskan onizleme, sagda form */
+  .fm-duzen{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:clamp(18px,4vw,56px);align-items:start}
+  .fm-onizleme{position:sticky;top:calc(var(--nav-h,68px) + 16px);display:grid;gap:14px;justify-items:center}
+  .fm-sahne{width:100%;background:radial-gradient(120% 90% at 50% 20%,#fff 0,var(--acik) 70%);border-radius:var(--k-xl);padding:clamp(18px,4vw,48px);display:grid;place-items:center}
+  .fm-sahne svg{width:min(100%,360px);height:auto;filter:drop-shadow(0 18px 30px var(--golge));transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+  .fm-yuz{display:inline-flex;padding:4px;border-radius:999px;background:var(--acik);gap:4px}
+  .fm-yuz button{font:700 14px var(--f-g);padding:8px 18px;border-radius:999px;border:0;background:transparent;color:var(--karbon);cursor:pointer}
+  .fm-yuz button[aria-pressed="true"]{background:var(--karbon);color:#fff}
+
+  .fm-form{display:grid;gap:16px}
+  .fm-beden{border:0;padding:0;margin:0;display:grid;gap:8px}
+  .fm-beden legend{font-weight:700;margin-bottom:8px}
+  .fm-beden > div{display:flex;flex-wrap:wrap;gap:8px}
+  .fm-beden label{position:relative;cursor:pointer}
+  .fm-beden input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+  .fm-beden span{display:grid;place-items:center;min-width:52px;height:44px;padding:0 12px;border-radius:var(--k-s);border:2px solid var(--gri);font:800 16px var(--f-g);transition:background .18s,border-color .18s,color .18s}
+  .fm-beden label.secili span{background:var(--bordo);border-color:var(--bordo);color:#fff}
+  .fm-beden input:focus-visible + span{outline:3px solid var(--karbon);outline-offset:2px}
+
+  .fm-secenek{display:grid;gap:10px}
+  .fm-kart{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:14px 16px;border:2px solid var(--gri);border-radius:var(--k-m,14px);cursor:pointer;transition:border-color .18s,background .18s}
+  .fm-kart.acik{border-color:var(--bordo);background:rgba(139,21,26,.05)}
+  .fm-kart input{width:20px;height:20px;accent-color:var(--bordo);margin:0}
+  .fm-kart-y{display:grid;gap:2px}
+  .fm-kart-y b{font-size:16px}
+  .fm-kart-y small{font-size:13px;opacity:.7}
+  .fm-ucret{font:italic 800 20px/1 var(--f-b);color:var(--bordo)}
+  .fm-yazi{padding:0 4px}
+
+  .fm-hesap{display:grid;gap:6px;margin:0;padding:16px 18px;border-radius:var(--k-m,14px);background:var(--acik)}
+  .fm-hesap div{display:flex;justify-content:space-between;gap:12px;font-size:15px}
+  .fm-hesap dd{margin:0;font-weight:700;font-variant-numeric:tabular-nums}
+  .fm-hesap .fm-top{padding-top:8px;margin-top:4px;border-top:1.5px solid var(--gri);font-size:18px}
+  .fm-hesap .fm-top dd{font:italic 800 26px/1 var(--f-b);color:var(--bordo)}
+  .fm-hesap .fm-alt{font-size:14px;opacity:.8}
 
   .s-ozet p{font-size:17px}
   .s-ozet a{color:inherit;font-weight:700}
@@ -34,7 +65,9 @@
   .kopya:active{transform:scale(.96)}
   .s-form .ornek{font-size:13px}
 
-  @media(max-width:560px){
-    .lansman figure{padding:14px}
+  @media(max-width:820px){
+    .fm-duzen{grid-template-columns:1fr}
+    .fm-onizleme{position:static}
+    .fm-sahne svg{width:min(100%,260px)}
   }
 }

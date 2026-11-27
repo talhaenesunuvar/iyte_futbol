@@ -14,7 +14,9 @@ export default function ElleSiparis({ bedenler }: { bedenler: string[] }) {
         <label>Arka isim<input name="arka_isim" maxLength={12} /></label>
         <label>Numara<input name="numara" type="number" min={1} max={99} /></label>
       </div>
+      <label className="y-onay"><input type="checkbox" name="logo3d" /> 3D logo</label>
       <label className="y-onay"><input type="checkbox" name="kapora" /> Kapora alındı</label>
+      <p className="y-soluk">Arka isim ya da numara girilirse yazı ücreti eklenir.</p>
       {d.hata && <p className="y-hata">{d.hata}</p>}
       {d.tamam && <p className="y-tamam">{d.tamam}</p>}
       <div><button className="y-btn" disabled={bekliyor}>Sipariş ekle</button></div>

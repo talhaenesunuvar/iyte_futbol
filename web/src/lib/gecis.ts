@@ -12,6 +12,16 @@ export async function gecisler(sql: postgres.Sql) {
   await gecisV4(sql);
   await gecisV5(sql);
   await gecisV6(sql);
+  await gecisV7(sql);
+}
+
+// V7 (2026-11-27, Derin): bedenler XS-4XL. Panelden hic degistirilmemis eski varsayilan listeyi yenisiyle degistirir.
+async function gecisV7(sql: postgres.Sql) {
+  const ilk = await sql`insert into ayar (anahtar, deger) values ('gecis_v7', now()::text) on conflict do nothing returning anahtar`;
+  if (!ilk.length) return;
+  await sql`update ayar set deger = 'XS,S,M,L,XL,XXL,3XL,4XL' where anahtar = 'forma_bedenler' and deger = 'S,M,L,XL,XXL'`;
+  // Eski siparislerde isim/numara ucretsizdi: yazisi olanlar yazi=true sayilir, tutar null kalir (eski fiyatla verildi)
+  await sql`update forma_siparis set yazi = true where arka_isim <> '' or numara is not null`;
 }
 
 // V6 (2026-11-27): eleme agaci onarimi. Eski ilerlet yalniz bir tur ileri yaziyordu; sonradan duzeltilen

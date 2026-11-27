@@ -2,7 +2,7 @@
 // Yeni sutun gerekirse sona "alter table ... add column if not exists" eklenir.
 // SEMAYI DEGISTIRINCE SEMA_SURUM'U ARTIR: soguk acilista sema yalnizca kayitli surum eskiyse calisir
 // (ALTER TABLE, sutun varken bile tablo kilidi alir; her yeni sunucu orneginde calismasin).
-export const SEMA_SURUM = "5";
+export const SEMA_SURUM = "6";
 export const SEMA = /* sql */ `
 create table if not exists ayar (
   anahtar text primary key,
@@ -186,4 +186,9 @@ create table if not exists istek_sayac (
 );
 -- Koy randevusunu alan IP (ayni IP'den en cok 2 aktif gelecek randevu; sahte doldurmaya karsi)
 alter table koy_randevu add column if not exists ip text not null default '';
+-- V6 (2026-11-27, Derin): forma opsiyonlari. yazi = arkaya isim/numara (ucretli opsiyon), logo3d = 3D logo;
+-- tutar = siparis anindaki toplam fiyat (ayarlardaki fiyat sonradan degisse de siparis kendi tutarini korur; eski kayitta null)
+alter table forma_siparis add column if not exists yazi boolean not null default false;
+alter table forma_siparis add column if not exists logo3d boolean not null default false;
+alter table forma_siparis add column if not exists tutar int;
 `;

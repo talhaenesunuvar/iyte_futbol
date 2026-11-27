@@ -41,6 +41,10 @@
   .h-dugme { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
   .h-cizgili { background: transparent; border-color: rgba(255,255,255,.7); color: #fff; }
   .h-cizgili:hover { background: #fff; color: var(--karbon); }
+  /* WhatsApp grup dugmeleri (2026-11-27) */
+  .h-wa { display: inline-flex; align-items: center; gap: 8px; background: #177A3E; border-color: #177A3E; color: #fff; }
+  .h-wa:hover { background: #11602F; border-color: #11602F; color: #fff; }
+  .wa-gruplar { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 14px; padding: 0; list-style: none; }
   .js & :is(.h-ust, .h-soz, .h-dugme, .h-serit) { opacity: 0; transform: translateY(12px); }
   &.acildi :is(.h-ust, .h-soz, .h-dugme, .h-serit) { opacity: 1; transform: none; transition: opacity .7s ease, transform .8s var(--egri); }
   &.acildi .h-soz { transition-delay: .25s; }
