@@ -1,13 +1,18 @@
 import "server-only";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { db } from "./db";
+import { istemciIp } from "./sinir";
 
 // Yonetim paneli girisi: tek sifre (YONETIM_SIFRESI) + imzali, HttpOnly oturum cerezi.
 // Cerez = "<bitis_ms>.<hmac>"; sunucuda veri tutulmaz. Sifre degisirse (OTURUM_SIRRI yoksa) tum oturumlar duser.
 // Her server action kendi basinda yetkiGerekli() cagirir: action'lar herkese acik uc noktadir.
+//
+// GUVENLIK (2026-11-27 denetimi): imza anahtari OTURUM_SIRRI'dir; URETIMDE AYRI TANIMLA. Tanimli degilse
+// YONETIM_SIFRESI'ne duser; o zaman sizan bir cerezden (cerez = <bitis>.<hmac>, bitis acik) sifre cevrimdisi
+// brute-force edilebilir. Ayri yuksek-entropili OTURUM_SIRRI ile imza sifreden tamamen bagimsiz olur.
 
 const CEREZ = "iyte_yonetim";
 const SURE_MS = 14 * 86_400_000;
@@ -41,18 +46,14 @@ export async function yetkiGerekli() {
   if (!(await yetkiliMi())) redirect("/yonetim/giris");
 }
 
-async function ipAl() {
-  const h = await headers();
-  return (h.get("x-forwarded-for")?.split(",")[0] || h.get("x-real-ip") || "yerel").trim();
-}
-
 export type GirisSonuc = { hata?: string };
 
 export async function girisDene(sifre: string): Promise<GirisSonuc> {
   const beklenen = process.env.YONETIM_SIFRESI;
   if (!beklenen) return { hata: "Panel şifresi sunucuda tanımlı değil (YONETIM_SIFRESI)." };
   const sql = await db();
-  const ip = await ipAl();
+  // Giris sayaci da herkese acik formlarla ayni /64 IPv6 normalizasyonunu kullanir (tek bir /64 blogu limiti asamasin)
+  const ip = await istemciIp();
   await sql`delete from giris_deneme where zaman < now() - interval '1 day'`;
   const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from giris_deneme where ip = ${ip} and zaman > now() - make_interval(mins => ${PENCERE_DK})`;
   if (n >= AZAMI_DENEME) return { hata: `Çok fazla deneme. ${PENCERE_DK} dakika sonra tekrar dene.` };
