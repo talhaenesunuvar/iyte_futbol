@@ -2,6 +2,7 @@ import "server-only";
 import type postgres from "postgres";
 import { AD, HAKEMLER, NUMARALAR, RENKLER, SOYAD, prng } from "./tohum/turnuva";
 import { kaybeden, type Mac } from "./turnuva-hesap";
+import { agaciOnar } from "./eleme";
 
 // Tek seferlik veri gecisleri. Sema (sema.ts) her acilista IF NOT EXISTS ile calisir; burasi ise mevcut
 // veriyi yeni ozelliklere tasir. Her gecis ayar tablosundaki anahtarla bir kez calisir (paralel acilista yalnizca biri).
@@ -10,6 +11,17 @@ export async function gecisler(sql: postgres.Sql) {
   await gecisV3(sql);
   await gecisV4(sql);
   await gecisV5(sql);
+  await gecisV6(sql);
+}
+
+// V6 (2026-11-27): eleme agaci onarimi. Eski ilerlet yalniz bir tur ileri yaziyordu; sonradan duzeltilen
+// sonuclar finale ulasmamis olabilir (canlida: yari finalde 0-3 kaybeden degil, ceyrekte elenen takim finaldeydi).
+// Her turnuvada karari olan eleme maclari tur tur yeniden ilerletilir. Skorlara dokunmaz, yalniz takim yerlerini duzeltir.
+async function gecisV6(sql: postgres.Sql) {
+  const ilk = await sql`insert into ayar (anahtar, deger) values ('gecis_v6', now()::text) on conflict do nothing returning anahtar`;
+  if (!ilk.length) return;
+  const l = await sql<{ id: number }[]>`select id from turnuva order by id`;
+  for (const t of l) await agaciOnar(sql, t.id);
 }
 
 // V5 (2026-11-24): ornek turnuvanin oyuncularina ornek mevki, bolum ve sinif (artik herkese acik).

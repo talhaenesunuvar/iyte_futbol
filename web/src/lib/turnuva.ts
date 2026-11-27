@@ -4,8 +4,8 @@ import { cacheLife, cacheTag } from "next/cache";
 import { db } from "./db";
 import { ETIKET } from "./ayar";
 import {
-  golKralligi, kaybeden, kazanan, oynandi, sonrakiAsama, sonrakiYer,
-  type Asama, type Durum, type Gol, type Kart, type Mac, type Oyuncu, type OyuncuGizli, type Takim, type Turnuva,
+  golKralligi, kazanan, oynandi,
+  type Durum, type Gol, type Kart, type Mac, type Oyuncu, type OyuncuGizli, type Takim, type Turnuva,
 } from "./turnuva-hesap";
 
 export * from "./turnuva-hesap";
@@ -162,25 +162,8 @@ export async function basvurular(turnuvaId: number) {
   return sql<Basvuru[]>`select id, takim_ad, kaptan, telefon, eposta, oyuncular, durum, olusturma from basvuru where turnuva_id = ${turnuvaId} order by (durum = 'bekliyor') desc, olusturma desc`;
 }
 
-// Eleme maci sonucu degisince kazanani bir sonraki turdaki yerine yazar (karar yoksa yeri bosaltir).
-// Yari finalde ayrica kaybeden 3.luk macina gider.
-export async function ilerlet(sql: postgres.Sql, macId: number) {
-  const [m] = await sql<(Omit<Mac, "zaman"> & { turnuva_id: number })[]>`
-    select id, turnuva_id, asama, grup, sira, ev_id, dep_id, saha, ev_gol, dep_gol, ev_pen, dep_pen, canli, hakem from mac where id = ${macId}`;
-  if (!m) return;
-  const mac: Mac = { ...m, zaman: null };
-  if (m.asama === "yari") {
-    const kb = kaybeden(mac);
-    if (m.sira === 1) await sql`update mac set ev_id = ${kb} where turnuva_id = ${m.turnuva_id} and asama = 'ucuncu' and sira = 1`;
-    else await sql`update mac set dep_id = ${kb} where turnuva_id = ${m.turnuva_id} and asama = 'ucuncu' and sira = 1`;
-  }
-  const sonraki = sonrakiAsama(m.asama as Asama);
-  if (!sonraki) return;
-  const k = kazanan(mac);
-  const { sira, taraf } = sonrakiYer(m.sira);
-  if (taraf === "ev") await sql`update mac set ev_id = ${k} where turnuva_id = ${m.turnuva_id} and asama = ${sonraki} and sira = ${sira}`;
-  else await sql`update mac set dep_id = ${k} where turnuva_id = ${m.turnuva_id} and asama = ${sonraki} and sira = ${sira}`;
-}
+// Eleme ilerletme (zincirleme) ve agac onarimi: src/lib/eleme.ts
+export { ilerlet, agaciOnar } from "./eleme";
 
 // Canli macta skor gollerden turetilir (gol eklenince/silinince tutarli kalir)
 export async function skorTazele(sql: postgres.Sql, macId: number) {

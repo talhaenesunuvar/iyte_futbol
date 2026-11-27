@@ -68,6 +68,11 @@
   .kr-fis.cekildi{opacity:.4}
   .kr-fis.cekildi .tk-rozet{filter:grayscale(1)}
   .kr-fis.cekiliyor{background:var(--bordo);transform:scale(1.03)}
+  /* Takim secimi (oynatma sirasinda): dokununca siradaki cekilen o takim olur */
+  .kr-fis.secilebilir{cursor:pointer;transition:background .18s ease,box-shadow .18s ease}
+  @media (hover:hover){.kr-fis.secilebilir:hover{background:rgba(255,255,255,.14)}}
+  .kr-fis.secilebilir:focus-visible{outline:2px solid var(--beyaz);outline-offset:1px}
+  .kr-fis.secili{background:rgba(139,21,26,.55);box-shadow:inset 0 0 0 2px var(--beyaz)}
   .kr-torba.karis .kr-fis:not(.cekildi){animation:kr-salla .32s var(--d,0ms) ease-in-out infinite alternate}
 
   /* Isik: topun acildigi alan */

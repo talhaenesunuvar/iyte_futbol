@@ -69,7 +69,13 @@ const bosAbone = () => () => {};
 export default function KuraSahnesi({ baslik, takimlar, harfler, torbalar, adimlar, kayitli, zaman }: Props) {
   const tk = useMemo(() => new Map(takimlar.map((t) => [t.id, t])), [takimlar]);
   const [deneme, setDeneme] = useState<KuraAdim[] | null>(null);
-  const sira = deneme ?? adimlar;
+  // kaynak: oynatilacak cekim (kayitli ya da deneme). duzen: oynatma sirasinda kullanicinin sectigi takimlarla
+  // yeniden dizilmis hali (Derin, 2026-11-25: "istedigim takima tiklayip secebileyim, benim sectigim yerlessin").
+  // Takim->grup eslesmesi DEGISMEZ, yalniz cekilis sirasi degisir; her torbadan her gruba bir takim kurali korunur.
+  const kaynak = deneme ?? adimlar;
+  const [duzen, setDuzen] = useState<KuraAdim[] | null>(null);
+  const sira = duzen ?? kaynak;
+  const [secim, setSecim] = useState<number | null>(null);
   const [n, setN] = useState(adimlar.length);
   const [calisma, setCalisma] = useState<Calisma>({ no: 0, oyna: false });
   const [aktif, setAktif] = useState<number | null>(null);
@@ -90,6 +96,7 @@ export default function KuraSahnesi({ baslik, takimlar, harfler, torbalar, adiml
   const adimR = useRef(false);
   const durR = useRef(false);
   const ileriR = useRef<(() => void) | null>(null);
+  const secimR = useRef<number | null>(null);
 
   useEffect(() => { hizR.current = CARPAN[hiz]; }, [hiz]);
   useEffect(() => {
@@ -112,6 +119,7 @@ export default function KuraSahnesi({ baslik, takimlar, harfler, torbalar, adiml
     const az = azaltilmis();
     const sure = (k: keyof typeof SURE) => SURE[k] * hizR.current;
     const kok = sahne.current!;
+    const s2 = [...kaynak];
 
     // Adim modu ya da duraklatma: dokunma / bosluk / Devam bekler
     const kapi = () => new Promise<void>((ok, red) => {
@@ -122,8 +130,21 @@ export default function KuraSahnesi({ baslik, takimlar, harfler, torbalar, adiml
       s.addEventListener("abort", birak, { once: true });
     });
 
+    // Secilen takim siradaki adim olur: kalan adimlar icinde one alinir
+    const secileniOneAl = (i: number) => {
+      const id = secimR.current;
+      secimR.current = null;
+      setSecim(null);
+      if (id === null) return;
+      const j = s2.findIndex((x, k) => k >= i && x.takim_id === id);
+      if (j <= i) return;
+      const [x] = s2.splice(j, 1);
+      s2.splice(i, 0, x);
+      flushSync(() => setDuzen([...s2]));
+    };
+
     const adim = async (i: number) => {
-      const a = sira[i];
+      const a = s2[i];
       const anahtar = torbaAnahtar(a.torba);
       flushSync(() => { setAktif(i); setYeni(null); setRulet(null); setAsama("torba"); });
 
@@ -160,7 +181,7 @@ export default function KuraSahnesi({ baslik, takimlar, harfler, torbalar, adiml
       await bekle(az ? 700 : sure("oku"), s);
 
       // 4) Grup ruleti: yalniz bu torbadan henuz takim almamis gruplar (hedef her zaman dahil)
-      const dolu = new Set(sira.slice(0, i).filter((b) => b.torba === a.torba).map((b) => b.grup));
+      const dolu = new Set(s2.slice(0, i).filter((b) => b.torba === a.torba).map((b) => b.grup));
       const uygun = harfler.filter((g) => g === a.grup || !dolu.has(g));
       flushSync(() => setAsama("rulet"));
       if (!az && uygun.length > 1) {
@@ -210,8 +231,9 @@ export default function KuraSahnesi({ baslik, takimlar, harfler, torbalar, adiml
 
     (async () => {
       try {
-        for (let i = 0; i < sira.length; i++) {
+        for (let i = 0; i < s2.length; i++) {
           await kapi();
+          secileniOneAl(i);
           await adim(i);
         }
         setAktif(null);
@@ -227,7 +249,7 @@ export default function KuraSahnesi({ baslik, takimlar, harfler, torbalar, adiml
       ileriR.current = null;
       kat?.replaceChildren();
     };
-  }, [calisma, sira, harfler]);
+  }, [calisma, kaynak, harfler]);
 
   // Klavye: bosluk / sag ok / PageDown (sunum kumandasi) = siradaki takim; F = tam ekran
   useEffect(() => {
@@ -252,6 +274,9 @@ export default function KuraSahnesi({ baslik, takimlar, harfler, torbalar, adiml
   }
 
   function sifirla() {
+    secimR.current = null;
+    setSecim(null);
+    setDuzen(null);
     setAktif(null); setAsama(null); setRulet(null); setYeni(null); setBekliyor(false); setBitti(false); setDuraklat(false);
   }
   // Oynatma baslarken sahneyi menunun altina hizala (tam ekranda gerek yok)
@@ -288,6 +313,14 @@ export default function KuraSahnesi({ baslik, takimlar, harfler, torbalar, adiml
     setCalisma((c) => ({ no: c.no + 1, oyna: false }));
   }
   const ileri = () => ileriR.current?.();
+  // Torbadaki takima dokunma: siradaki cekilen o takim olur. Beklerken (adim modu / duraklatma) hemen cekilir,
+  // otomatik oynatmada bir sonraki adimda. Ayni takima tekrar dokunmak secimi kaldirir.
+  function takimSec(id: number) {
+    const yeniSecim = secimR.current === id ? null : id;
+    secimR.current = yeniSecim;
+    setSecim(yeniSecim);
+    if (yeniSecim !== null && ileriR.current) ileri();
+  }
 
   const oynuyor = calisma.oyna && !bitti && (n < sira.length || aktif !== null);
   const a = aktif !== null ? sira[aktif] : null;
@@ -381,8 +414,19 @@ export default function KuraSahnesi({ baslik, takimlar, harfler, torbalar, adiml
                   {icindekiler.map((t, i) => {
                     const g = cekilen.get(t.id);
                     const durumS = g ? " cekildi" : t.id === cekiliyor ? " cekiliyor" : "";
+                    const secilebilir = oynuyor && !g && t.id !== cekiliyor;
                     return (
-                      <li key={t.id} className={"kr-fis" + durumS} style={{ "--d": `${(i % 4) * 60}ms` } as CSSProperties} title={t.ad}>
+                      <li
+                        key={t.id}
+                        className={"kr-fis" + durumS + (secilebilir ? " secilebilir" : "") + (secim === t.id ? " secili" : "")}
+                        style={{ "--d": `${(i % 4) * 60}ms` } as CSSProperties}
+                        title={secilebilir ? `${t.ad}: sıradaki bu takım çekilsin` : t.ad}
+                        role={secilebilir ? "button" : undefined}
+                        tabIndex={secilebilir ? 0 : undefined}
+                        aria-pressed={secilebilir ? secim === t.id : undefined}
+                        onClick={secilebilir ? (e) => { e.stopPropagation(); takimSec(t.id); } : undefined}
+                        onKeyDown={secilebilir ? (e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); takimSec(t.id); } } : undefined}
+                      >
                         <TakimRozet t={t} boy={20} />
                         <span className="kr-fis-ad">{t.ad}</span>
                         {g && <span className="kr-fis-grup" aria-label={`${g} grubu`}>{g}</span>}
@@ -419,8 +463,8 @@ export default function KuraSahnesi({ baslik, takimlar, harfler, torbalar, adiml
             </div>
           ) : bekliyor && siradaki ? (
             <div className="kr-isik-bos">
-              <b>Sıradaki: {torbaAd(siradaki.torba)}</b>
-              <span>Dokun ya da boşluk tuşuna bas</span>
+              <b>Torbadan bir takım seç</b>
+              <span>Seçtiğin takım çekilir. Boşluk ya da boş alana dokunma: sıradaki ({torbaAd(siradaki.torba)})</span>
             </div>
           ) : bitti || (n > 0 && n === sira.length) ? (
             <div className="kr-isik-bos son">

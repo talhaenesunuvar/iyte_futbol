@@ -208,7 +208,7 @@ export default async function TurnuvaYonet({ params, searchParams }: Props) {
           <details key={a} className="y-ac" open={a !== "grup" || elemeMac.length === 0}>
             <summary>{ASAMA_AD[a]} <span className="y-soluk">({maclar.filter((m) => m.asama === a).filter(oynandi).length}/{maclar.filter((m) => m.asama === a).length} oynandı)</span></summary>
             <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
-              {maclar.filter((m) => m.asama === a).map((m) => <MacKarti key={m.id} m={m} T={T} takimlar={takimlar} oyuncular={oyuncular} goller={goller.filter((g) => g.mac_id === m.id)} kartlar={kartlar.filter((x) => x.mac_id === m.id)} />)}
+              {maclar.filter((m) => m.asama === a).map((m) => <MacKarti key={`${m.id}-${m.ev_id}-${m.dep_id}-${m.ev_gol}-${m.dep_gol}-${m.ev_pen}-${m.dep_pen}`} m={m} T={T} takimlar={takimlar} oyuncular={oyuncular} goller={goller.filter((g) => g.mac_id === m.id)} kartlar={kartlar.filter((x) => x.mac_id === m.id)} />)}
             </div>
           </details>
         ))}
